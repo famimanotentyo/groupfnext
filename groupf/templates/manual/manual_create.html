@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}マニュアル作成{% endblock %}
+{% block content %}
+    <div class="container-fluid px-lg-4 py-3">
+        <section class="manual-create-section">
+            <div class="page-header">
+                <h2 class="mb-0">マニュアル作成画面</h2>
+            </div>
+
+            <form action="{% url 'manual_create_view' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- タイトル入力欄を追加 -->
+                <div class="form-group">
+                    <label for="title">タイトル <span class="text-danger">*</span></label>
+                    <input type="text" id="title" name="title" class="form-control" placeholder="マニュアルのタイトルを入力..." required>
+                </div>
+
+                <div class="form-group">
+                    <label for="manual_file">ファイル <span class="text-danger">*</span></label>
+                    <div class="file-input-wrapper">
+                        <input type="text" id="file_name_display" class="form-control" placeholder="ファイルが選択されていません" readonly>
+                        <button type="button" id="browse_btn" class="btn btn-browse">参照</button>
+                        <input type="file" id="manual_file" name="file" hidden required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">説明</label>
+                    <textarea id="description" name="description" class="form-control" rows="8" placeholder="マニュアルの説明を入力してください..."></textarea>
+                </div>
+
+                <div class="submit-container">
+                    <button type="submit" class="btn btn-submit">マニュアルを送信</button>
+                </div>
+
+            </form>
+        </section>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const browseBtn = document.getElementById('browse_btn');
+        const fileInput = document.getElementById('manual_file');
+        const fileNameDisplay = document.getElementById('file_name_display');
+
+        browseBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.value = fileInput.files[0].name;
+            } else {
+                fileNameDisplay.value = 'ファイルが選択されていません';
+            }
+        });
+    });
+</script>
+{% endblock %}

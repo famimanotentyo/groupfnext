@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}カレンダー{% endblock %}
+
+{% block extra_css %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<style>
+    #calendar {
+        max-width: 100%;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    .fc-event {
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">カレンダー</h2>
+        
+        <div class="d-flex align-items-center">
+            <label class="me-2 fw-bold">表示ユーザー:</label>
+            <select id="userSelect" class="form-select" style="width: auto;">
+                {% for u in users %}
+                <option value="{{ u.id }}" {% if u.id == user.id %}selected{% endif %}>
+                    {{ u.last_name }} {{ u.first_name }} ({{ u.department.name }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div id='calendar'></div>
+</div>
+
+<!-- イベント登録モーダル -->
+<div class="modal fade" id="addEventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">予定を追加</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addEventForm">
+                    <div class="mb-3">
+                        <label class="form-label">タイトル</label>
+                        <input type="text" name="title" class="form-control" require>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">カテゴリ</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="category" id="cat_work" value="work" checked>
+                            <label class="btn btn-outline-secondary" for="cat_work">仕事 (他人には「予定あり」)</label>
+                            
+                            <input type="radio" class="btn-check" name="category" id="cat_personal" value="personal">
+                            <label class="btn btn-outline-danger" for="cat_personal">個人的 (他人には「不在」)</label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">開始</label>
+                            <input type="datetime-local" name="start" class="form-control" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">終了</label>
+                            <input type="datetime-local" name="end" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">詳細</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" id="saveEventBtn">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- イベント詳細モーダル -->
+<div class="modal fade" id="eventDetailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="detailTime" class="text-muted small mb-3"></p>
+                <div id="detailDescription" style="white-space: pre-wrap;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var userSelect = document.getElementById('userSelect');
+        var addModal = new bootstrap.Modal(document.getElementById('addEventModal'));
+        var detailModal = new bootstrap.Modal(document.getElementById('eventDetailModal'));
+
+        // カレンダー初期化
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            locale: 'ja',
+            selectable: true,
+            select: function(info) {
+                // 自分のカレンダーを見ているときだけ登録可能にするか？
+                // 今回は「表示ユーザー」を変えても「登録」は常に「自分」の予定として登録される仕様にする（シンプル化）
+                // フォームリセット
+                document.getElementById('addEventForm').reset();
+                
+                // 日時セット
+                var start = info.startStr;
+                var end = info.endStr;
+                
+                // timeGridで選択した場合はISO文字列に時間が含まれる
+                // dayGridで選択した場合は日付のみなので時間を付加
+                if (!start.includes('T')) {
+                    start += 'T09:00';
+                    end = info.startStr + 'T10:00'; // デフォルト1時間
+                } else {
+                    end = end.substring(0, 16); // 秒カット
+                    start = start.substring(0, 16);
+                }
+                
+                document.querySelector('input[name="start"]').value = start;
+                document.querySelector('input[name="end"]').value = end;
+                
+                addModal.show();
+            },
+            events: function(info, successCallback, failureCallback) {
+                var userId = userSelect.value;
+                var url = "{% url 'schedule_get_events' %}?user_id=" + userId + "&start=" + info.startStr + "&end=" + info.endStr;
+                
+                fetch(url)
+                .then(response => response.json())
+                .then(data => successCallback(data))
+                .catch(error => failureCallback(error));
+            },
+            eventClick: function(info) {
+                var props = info.event.extendedProps;
+                var desc = props.description || '（詳細なし）';
+                
+                document.getElementById('detailTitle').innerText = info.event.title;
+                document.getElementById('detailTime').innerText = 
+                    info.event.start.toLocaleString() + ' - ' + (info.event.end ? info.event.end.toLocaleString() : '');
+                document.getElementById('detailDescription').innerText = desc;
+                
+                detailModal.show();
+            }
+        });
+
+        calendar.render();
+
+        // ユーザー切り替え時
+        userSelect.addEventListener('change', function() {
+            calendar.refetchEvents();
+        });
+
+        // 保存ボタン
+        document.getElementById('saveEventBtn').addEventListener('click', function() {
+            var form = document.getElementById('addEventForm');
+            var formData = new FormData(form);
+            var data = {};
+            formData.forEach((value, key) => data[key] = value);
+            
+            fetch("{% url 'schedule_add_event' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    addModal.hide();
+                    calendar.refetchEvents();
+                    // ユーザー選択を自分に戻す？ そのままの方がいいか
+                    if (userSelect.value != "{{ user.id }}") {
+                         alert('予定を保存しました。（現在他のユーザーのカレンダーを表示しています）');
+                    }
+                } else {
+                    alert('エラー: ' + data.message);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

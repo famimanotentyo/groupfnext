@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}マネージャーダッシュボード{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1>マネージャーダッシュボード</h1>
+    <p>このページで業務を行います。</p>
+    <hr>
+    
+    <!-- このボタンはデモ用です。クリックすると通知ポップアップが表示されます。 -->
+    <button id="showNotificationBtn" class="btn btn-info">テスト通知を表示</button>
+
+</div>
+
+<!-- ======================================================= -->
+<!-- パスワードリセット申請 通知モーダル（ポップアップ） -->
+<!-- ======================================================= -->
+<div class="modal fade" id="resetRequestModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">パスワードリセット申請</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="notificationMessage">〇〇さんからパスワードリセット申請が届きました。</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">後で対応</button>
+        {# 承認ボタンはクリックするとポップアップを閉じるだけの動作 #}
+        <button type="button" id="approveBtn" class="btn btn-success">承認</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const resetRequestModal = new bootstrap.Modal(document.getElementById('resetRequestModal'));
+    
+    // 「テスト通知を表示」ボタンが押されたら、モーダルを表示します。
+    document.getElementById('showNotificationBtn').addEventListener('click', function() {
+        resetRequestModal.show();
+    });
+
+    // 「承認」ボタンが押されたら、モーダルを閉じます。
+    // (実際のメール送信処理などは行いません)
+    document.getElementById('approveBtn').addEventListener('click', function() {
+        alert('承認処理を実行しました。(実際にはここでパスワード生成とメール送信が行われます)');
+        resetRequestModal.hide();
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+
+{% block title %}プロフィール登録{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* 生年月日や電話番号の入力欄の間の区切り文字 */
+  .input-separator {
+    padding: 0.5rem 0.25rem;
+    color: #6c757d;
+  }
+  .form-check-label {
+    margin-right: 2rem;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+  {# actionにはこのフォームのデータを受け取るビューのURLを指定します #}
+  <form id="profileForm" action="{% url 'process_registration' %}" method="post">
+    {% csrf_token %}
+
+    <!-- 氏名 -->
+    <div class="row mb-3">
+      <div class="col-md-2 align-self-center"><label class="form-label">姓</label></div>
+      <div class="col-md-4">
+        <input type="text" class="form-control" id="last_name" name="last_name" required>
+      </div>
+      <div class="col-md-2 align-self-center"><label class="form-label">名</label></div>
+      <div class="col-md-4">
+        <input type="text" class="form-control" id="first_name" name="first_name" required>
+      </div>
+    </div>
+    <!-- 氏名（セイ） -->
+    <div class="row mb-3">
+      <div class="col-md-2 align-self-center"><label class="form-label">セイ</label></div>
+      <div class="col-md-4">
+        <input type="text" class="form-control" id="last_name_kana" name="last_name_kana" required>
+      </div>
+      <div class="col-md-2 align-self-center"><label class="form-label">メイ</label></div>
+      <div class="col-md-4">
+        <input type="text" class="form-control" id="first_name_kana" name="first_name_kana" required>
+      </div>
+    </div>
+    <!-- 生年月日 -->
+    <div class="row mb-3">
+      <div class="col-md-2 align-self-center"><label class="form-label">生年月日</label></div>
+      <div class="col-md-10 d-flex align-items-center">
+        <input type="text" class="form-control" id="birth_year" name="birth_year" style="width: 80px;" required>
+        <span class="input-separator">/</span>
+        <input type="text" class="form-control" id="birth_month" name="birth_month" style="width: 60px;" required>
+        <span class="input-separator">/</span>
+        <input type="text" class="form-control" id="birth_day" name="birth_day" style="width: 60px;" required>
+      </div>
+    </div>
+    <!-- 性別 -->
+    <div class="row mb-3">
+      <div class="col-md-2 align-self-center"><label class="form-label">性別</label></div>
+      <div class="col-md-10">
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="gender" id="gender_male" value="male" checked>
+          <label class="form-check-label" for="gender_male">男</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="gender" id="gender_female" value="female">
+          <label class="form-check-label" for="gender_female">女</label>
+        </div>
+      </div>
+    </div>
+    <!-- メールアドレス -->
+    <div class="row mb-3">
+      <div class="col-md-2 align-self-center"><label for="email" class="form-label">メールアドレス</label></div>
+      <div class="col-md-10">
+        <input type="email" class="form-control" id="email" name="email" required>
+      </div>
+    </div>
+    <!-- 電話番号 -->
+    <div class="row mb-4">
+      <div class="col-md-2 align-self-center"><label class="form-label">電話番号</label></div>
+      <div class="col-md-10 d-flex align-items-center">
+        <input type="tel" class="form-control" id="phone1" name="phone1" required>
+        <span class="input-separator">-</span>
+        <input type="tel" class="form-control" id="phone2" name="phone2" required>
+        <span class="input-separator">-</span>
+        <input type="tel" class="form-control" id="phone3" name="phone3" required>
+      </div>
+    </div>
+    <!-- 登録ボタン -->
+    <div class="d-grid mt-5">
+      <button type="button" class="btn btn-outline-secondary btn-lg" id="openConfirmModalBtn">
+        登録
+      </button>
+    </div>
+  </form>
+
+  <!-- ======================================================= -->
+  <!-- 確認モーダル（ポップアップ） -->
+  <!-- ======================================================= -->
+  <div class="modal fade" id="confirmationModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">入力内容の確認</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>以下の内容で登録します。よろしいですか？</p>
+          <table class="table">
+            <tbody>
+              <tr><th scope="row">氏名</th><td id="confirmName"></td></tr>
+              <tr><th scope="row">氏名（カナ）</th><td id="confirmKana"></td></tr>
+              <tr><th scope="row">生年月日</th><td id="confirmBirth"></td></tr>
+              <tr><th scope="row">性別</th><td id="confirmGender"></td></tr>
+              <tr><th scope="row">メールアドレス</th><td id="confirmEmail"></td></tr>
+              <tr><th scope="row">電話番号</th><td id="confirmPhone"></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">修正する</button>
+          <button type="button" class="btn btn-primary" id="finalRegisterBtn">登録</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- 完了モーダル（ポップアップ） -->
+  <!-- ======================================================= -->
+  <div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body text-center p-4">
+          <p class="fs-5">これで登録作業は終了です。<br>ありがとうございました。</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">閉じる</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  
+  const profileForm = document.getElementById('profileForm');
+  const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+  const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+
+  document.getElementById('openConfirmModalBtn').addEventListener('click', function () {
+    // フォームのバリデーションをチェック (HTML5の required など)
+    if (!profileForm.checkValidity()) {
+      profileForm.reportValidity();
+      return;
+    }
+
+    const lastName = document.getElementById('last_name').value;
+    const firstName = document.getElementById('first_name').value;
+    // ... (他の値の取得は変更なし) ...
+    const phone3 = document.getElementById('phone3').value;
+
+    document.getElementById('confirmName').textContent = `${lastName} ${firstName}`;
+    // ... (モーダルへの値設定は変更なし) ...
+    document.getElementById('confirmPhone').textContent = `${phone1}-${phone2}-${phone3}`;
+
+    confirmationModal.show();
+  });
+
+  // ★★★ ここからが修正箇所 ★★★
+  document.getElementById('finalRegisterBtn').addEventListener('click', function () {
+    const formData = new FormData(profileForm);
+    const registerButton = this; // ボタン自体を保存
+
+    // ボタンを無効化し、スピナーを表示（二重送信防止）
+    registerButton.disabled = true;
+    registerButton.innerHTML = `
+      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      登録中...
+    `;
+    
+    // fetch APIを使ってサーバーにデータをPOST
+    fetch(profileForm.action, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': formData.get('csrfmiddlewaretoken') // CSRFトークンをヘッダーに含める
+      }
+    })
+    .then(response => response.json()) // サーバーからの応答をJSONとして解析
+    .then(data => {
+      if (data.status === 'success') {
+        // 成功した場合
+        confirmationModal.hide();
+        setTimeout(() => {
+          successModal.show();
+        }, 500);
+      } else {
+        // 失敗した場合
+        alert('エラーが発生しました: ' + data.message);
+      }
+    })
+    .catch(error => {
+      // ネットワークエラーなど
+      console.error('Error:', error);
+      alert('登録中にエラーが発生しました。');
+    })
+    .finally(() => {
+        // 処理が完了したらボタンの状態を元に戻す
+        registerButton.disabled = false;
+        registerButton.textContent = '登録';
+    });
+  });
+  // ★★★ 修正箇所ここまで ★★★
+
+  document.getElementById('successModal').addEventListener('hidden.bs.modal', function () {
+    // 登録完了後、トップページなどにリダイレクト
+    // window.location.href = "{% url 'top_page' %}"; // 実際のトップページのURL名に置き換えてください
+    console.log("登録完了。リダイレクト処理を実行します。");
+  });
+});
+</script>
+{% endblock %}

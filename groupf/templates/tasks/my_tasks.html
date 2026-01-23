@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}MYタスク{% endblock %}
+
+{% block content %}
+<style>
+.page-header-custom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+.page-title-custom {
+    font-size: 1.8em;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* --- タブフィルター --- */
+.task-filters {
+    display: flex;
+    gap: 10px;
+}
+.filter-btn {
+    text-decoration: none;
+    padding: 8px 16px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    color: #333;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+.filter-btn:hover {
+    background-color: #f0f0f0;
+}
+.filter-btn.active {
+    background-color: #e7f3ff;
+    border-color: #0d6efd;
+    color: #0d6efd;
+    font-weight: 500;
+}
+
+/* --- タスクリスト --- */
+.task-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.task-group-header {
+    font-size: 1.1em;
+    font-weight: 500;
+    color: #495057;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #dee2e6;
+}
+.task-item-link {
+    cursor: pointer;
+    display: block;
+    margin-bottom: 10px;
+    text-decoration: none;
+    color: #333;
+}
+.task-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #ced4da;
+    background-color: #fff;
+    border-radius: 4px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+.task-item-link:hover .task-item {
+    border-color: #0d6efd;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.task-details ul {
+    margin: 0;
+    padding-left: 20px;
+    line-height: 1.6;
+    list-style: disc;
+}
+.task-details .task-title {
+    font-weight: bold;
+}
+.task-actions .btn-complete {
+    padding: 6px 12px;
+    border: 1px solid #6c757d;
+    background-color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* =================================== */
+/* モーダル (ポップアップ)                */
+/* =================================== */
+
+/* --- モーダルの背景 --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none;        /* 最初は隠す設定 */
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+/* activeクラスが付いたときだけ表示 */
+.modal-overlay.active {
+    display: flex;        /* 表示する設定 */
+}
+
+/* --- モーダルのコンテンツ部分 --- */
+.modal-content {
+    background-color: #fff;
+    padding: 35px 40px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px; /* ポップアップの最大幅 */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    transform: scale(0.9);
+    transition: transform 0.3s;
+}
+.modal-overlay.active .modal-content {
+    transform: scale(1);
+}
+
+/* --- モーダル内の要素 --- */
+.modal-title {
+    font-size: 2.2em; /* タイトルのフォントサイズ */
+    font-weight: 700;
+    margin-top: 0;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+.modal-detail-item {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 18px;
+    font-size: 1.1em; /* 詳細項目のフォントサイズ */
+    line-height: 1.6;
+}
+.modal-detail-item strong {
+    flex-shrink: 0;
+    width: 120px; /* ラベルの幅を固定 */
+    font-weight: 600;
+    color: #333;
+    /* 均等割り付け */
+    text-align: justify;
+    text-align-last: justify;
+    text-justify: inter-ideograph;
+}
+.modal-detail-item strong::after {
+    content: '：'; /* CSSでコロンを追加 */
+    display: inline-block;
+    width: 1em;
+    text-align: center;
+}
+.modal-buttons {
+    margin-top: 35px;
+    display: flex;
+    gap: 15px;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 25px;
+}
+.modal-buttons .btn {
+    padding: 10px 24px;
+    font-size: 1em;
+    border-radius: 6px;
+    text-decoration: none;
+    border: 1px solid #ccc;
+    background-color: #f8f8f8;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.modal-buttons .btn:hover {
+    background-color: #eee;
+}
+.modal-btn-complete {
+    border-color: #0d6efd !important;
+    color: #0d6efd !important;
+    font-weight: 600;
+}
+.modal-btn-complete:hover {
+    background-color: #e7f3ff !important;
+}
+</style>
+
+{# (ページ上部のHTMLは変更なし) #}
+<hr>
+
+<div class="task-list-container">
+    {% for group_header, tasks in tasks_to_display.items %}
+    <div class="task-group">
+        <h3 class="task-group-header">{{ group_header }}</h3>
+        {% for task in tasks %}
+            <div class="task-item-link" data-task-json='{{ task.json_string|safe }}'>
+                <div class="task-item">
+                    <div class="task-details">
+                        <ul>
+                            <li class="task-title">{{ task.title }}</li>
+                            <li>期限 {{ task.due_date_full }}</li>   
+                            <li>{{ task.department }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% empty %}
+    <p>該当するタスクはありません。</p>
+    {% endfor %}
+</div>
+
+<div id="taskDetailModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2 id="modalTaskTitle" class="modal-title"></h2>
+        <div class="modal-body">
+            <div class="modal-detail-item"><strong>期限</strong><span id="modalDueDate"></span></div>
+            <div class="modal-detail-item"><strong>担当者</strong><span id="modalAssignee"></span></div>
+            <div class="modal-detail-item"><strong>詳細</strong><span id="modalDescription"></span></div>
+            <div class="modal-detail-item"><strong>マニュアル</strong><span id="modalManual"></span></div>
+        </div>
+        <div class="modal-buttons">
+            <button id="modalCloseButton" class="btn">戻る</button>
+            <!-- 返却などの処理があればURLを設定 -->
+            <button id="modalReturnButton" class="btn">返却</button>            <!-- 譲渡ボタンのIDを使ってJSでURLを動的にセット -->
+            <a id="modalTransferLink" href="#" class="btn">譲渡</a>
+            <a id="modalCompleteLink" href="#" class="btn modal-btn-complete">完了</a>        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    console.log("--- スクリプト開始 ---");
+
+    // 全ての要素を最初に取得
+    const modal = document.getElementById('taskDetailModal');
+    const modalContent = modal.querySelector('.modal-content');
+    const modalCloseButton = document.getElementById('modalCloseButton');
+    const taskLinks = document.querySelectorAll('.task-item-link');
+
+    // --- 1. 各タスクのクリックイベントの設定 ---
+    taskLinks.forEach((link, index) => {
+        link.addEventListener('click', (event) => {
+            // Aタグやボタン自体のクリックでモーダルが開かないように制御
+            if (event.target.tagName === 'A' || event.target.tagName === 'BUTTON') return;
+            
+            event.preventDefault();
+            const taskJsonString = event.currentTarget.dataset.taskJson;
+
+            if (taskJsonString) {
+                try {
+                    const taskData = JSON.parse(taskJsonString);
+                    openTaskModal(taskData);
+                } catch (e) {
+                    console.error("JSONパースに失敗:", e);
+                }
+            }
+        });
+    });
+
+    // --- 2. モーダルを閉じる関数 ---
+    function closeModal() {
+        console.log("モーダルを閉じます。");
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+
+    modal.addEventListener('click', closeModal);
+    modalCloseButton.addEventListener('click', closeModal);
+    modalContent.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeModal();
+    });
+
+    // --- 3. モーダルを開く関数 ---
+    // openTaskModal 関数の中を書き換え
+function openTaskModal(taskData) {
+    if (!taskData || !taskData.detail) return;
+
+    // データをセット
+    document.getElementById('modalTaskTitle').textContent = taskData.title || '';
+    document.getElementById('modalDueDate').textContent = taskData.detail.due_date || '';
+    document.getElementById('modalAssignee').textContent = taskData.detail.assignee || '';
+    document.getElementById('modalDescription').textContent = taskData.detail.description || '';
+    document.getElementById('modalManual').textContent = taskData.detail.manual || '';
+    
+    // --- リンク先の設定 ---
+
+    // 譲渡リンク
+    document.getElementById('modalTransferLink').href = `/my-tasks/${taskData.id}/transfer/`;
+    
+    // ★追加：完了リンクの設定（エラーメッセージのパスに合わせて /task/ID/complete/ に設定）
+    const completeLink = document.getElementById('modalCompleteLink');
+    if (completeLink) {
+        completeLink.href = `/task/${taskData.id}/complete/`;
+    }
+    
+    // 返却ボタンの設定
+    const returnBtn = document.getElementById('modalReturnButton');
+    if (returnBtn) {
+        returnBtn.onclick = function() {
+            window.location.href = `/my-tasks/${taskData.id}/return/`;
+        };
+    }
+
+    // モーダルを表示
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+}
+</script>
+{% endblock %}

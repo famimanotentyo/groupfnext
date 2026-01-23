@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}タスク割り当て - プロジェクト管理{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ユーザーカードのスタイル */
+    .user-card {
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+        background-color: #fff;
+    }
+    .user-card:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .user-card.selected {
+        border-color: #0d6efd;
+        background-color: #e7f1ff;
+    }
+    
+    /* アイコン画像 */
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: #eee;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: #999;
+        margin: 0 auto;
+    }
+
+    /* マッチ度のバッジ */
+    .match-badge {
+        font-size: 0.8rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 10px;
+        display: block;
+        margin-top: 5px;
+    }
+    .match-high { background-color: #ffe69c; color: #664d03; } 
+    .match-low  { background-color: #e2e3e5; color: #383d41; }
+
+    /* 候補者リストのコンテナ（横スクロール） */
+    .candidate-list-container {
+        display: flex;
+        overflow-x: auto;
+        gap: 15px;
+        padding: 10px 5px;
+    }
+    .candidate-item {
+        flex: 0 0 120px; /* カードの幅を固定 */
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    
+    <div class="row justify-content-center">
+        <div class="col-xl-11 col-lg-12">
+            
+            <section>
+                <form id="assignForm" onsubmit="return false;"> 
+                    <div class="row">
+                        
+                        {# --- 左カラム: タスク選択 --- #}
+                        <div class="col-lg-6">
+                            <div class="mb-4">
+                                <label for="taskSearch" class="form-label fw-bold">割り当てるタスク:</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="taskSearch" placeholder="タスク名で検索...">
+                                    <button class="btn btn-outline-secondary" type="button" id="btnSearchTaskPOP">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                                
+                                <div id="selectedTaskDisplay" class="alert alert-primary mt-2 d-none">
+                                    <h6 id="displayTaskTitle" class="fw-bold mb-1"></h6>
+                                    <div class="small text-muted">
+                                        <span id="displayTaskTags"></span>
+                                    </div>
+                                    <input type="hidden" id="selectedTaskId">
+                                </div>
+                            </div>
+    
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">タグ (自動表示):</label>
+                                <input type="text" class="form-control" id="taskTags" placeholder="タスクを選択すると表示されます" readonly>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="assignDueDate" class="form-label fw-bold">期限:</label>
+                                <div class="input-group">
+                                    <input type="datetime-local" class="form-control" id="assignDueDate">
+                                </div>
+                            </div>
+                        </div>
+
+                        {# --- 右カラム: ユーザー選択 --- #}
+                        <div class="col-lg-6">
+                            <div class="mb-4">
+                                <label for="userSearch" class="form-label fw-bold">担当者を選択または検索:</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="userSearchInput" placeholder="名前から検索...">
+                                    <button class="btn btn-outline-secondary" type="button" id="btnSearchUser">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">候補 (AI推奨 & 負荷状況):</label>
+                                <div class="bg-light rounded p-3">
+                                    <div id="userListContainer" class="candidate-list-container">
+                                        <div class="text-center w-100 text-muted py-3">
+                                            タスクを選択すると、<br>最適な人材が表示されます。
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="selectedUserId">
+                                </div>
+                                <div id="selectedUserDisplay" class="mt-2 text-end fw-bold text-primary"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="mb-4">
+                        <label for="assignNotes" class="form-label fw-bold">備考欄:</label>
+                        <textarea class="form-control" id="assignNotes" rows="4"></textarea>
+                    </div>
+
+                    <div class="d-grid mt-5">
+                        <button type="button" id="btnExecuteAssign" class="btn btn-primary btn-lg py-3" disabled>
+                            タスクを割り当てる
+                        </button>
+                    </div>
+
+                </form>
+            </section>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="taskSearchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">割り振るタスクを選択</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3">
+                    <input type="text" id="modalTaskSearchInput" class="form-control" placeholder="タスク名で絞り込み...">
+                </div>
+                <div id="modalTaskList" class="list-group">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let selectedTaskId = null;
+    let selectedUserId = null;
+
+    // ==========================================
+    // 1. タスク検索・選択機能
+    // ==========================================
+    const modalTaskSearchInput = document.getElementById('modalTaskSearchInput');
+    
+    function fetchAndRenderTasks(keyword = '') {
+        fetch(`{% url 'api_search_tasks' %}?keyword=${keyword}`)
+            .then(response => response.json())
+            .then(data => {
+                const list = document.getElementById('modalTaskList');
+                list.innerHTML = '';
+                
+                if (data.tasks.length === 0) {
+                    list.innerHTML = '<div class="p-3 text-center text-muted">該当するタスクがありません</div>';
+                    return;
+                }
+
+                data.tasks.forEach(task => {
+                    const item = document.createElement('a');
+                    item.className = 'list-group-item list-group-item-action';
+                    item.href = '#';
+                    item.innerHTML = `
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1 fw-bold">${task.title}</h6>
+                            <small>${task.status}</small>
+                        </div>
+                        <small class="text-muted">期限: ${task.due_date.replace('T', ' ') || '未設定'}</small>
+                        <div class="mt-1">
+                            ${task.tags.map(t => `<span class="badge bg-light text-dark border me-1">${t}</span>`).join('')}
+                        </div>
+                    `;
+                    item.onclick = (e) => {
+                        e.preventDefault();
+                        selectTask(task);
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('taskSearchModal'));
+                        modal.hide();
+                    };
+                    list.appendChild(item);
+                });
+            });
+    }
+
+    // POPを開くボタン
+    document.getElementById('btnSearchTaskPOP').addEventListener('click', () => {
+        const keyword = document.getElementById('taskSearch').value;
+        const modal = new bootstrap.Modal(document.getElementById('taskSearchModal'));
+        modal.show();
+        setTimeout(() => {
+            document.getElementById('modalTaskSearchInput').value = keyword;
+            fetchAndRenderTasks(keyword);
+        }, 500);
+    });
+
+    // モーダル内検索
+    modalTaskSearchInput.addEventListener('input', (e) => {
+        fetchAndRenderTasks(e.target.value);
+    });
+
+    // タスク選択時の処理
+    function selectTask(task) {
+        selectedTaskId = task.id;
+        
+        // 画面表示更新
+        document.getElementById('selectedTaskDisplay').classList.remove('d-none');
+        document.getElementById('displayTaskTitle').textContent = task.title;
+        document.getElementById('displayTaskTags').textContent = task.tags.join(', ');
+        
+        document.getElementById('taskTags').value = task.tags.join(', '); // タグ入力欄にも表示
+        document.getElementById('assignDueDate').value = task.due_date; // 期限セット
+        
+        // ユーザー推奨ロジック実行
+        fetchAndRenderUsers(task.id);
+    }
+
+
+    // ==========================================
+    // 2. ユーザー推奨・選択機能
+    // ==========================================
+    function fetchAndRenderUsers(taskId = null, userName = '') {
+        let url = `{% url 'api_recommend_users' %}?dummy=1`;
+        if (taskId) url += `&task_id=${taskId}`;
+        if (userName) url += `&user_name=${userName}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('userListContainer');
+                container.innerHTML = '';
+
+                data.users.forEach(user => {
+                    // マッチ度に応じたバッジ
+                    let matchHtml = '';
+                    if (user.match_count > 0) {
+                        matchHtml = `<span class="match-badge match-high">タグ一致: ${user.match_count}</span>`;
+                    } else {
+                        matchHtml = `<span class="match-badge match-low">一致なし</span>`;
+                    }
+
+                    // アバター
+                    const avatarHtml = user.avatar_url 
+                        ? `<img src="${user.avatar_url}" class="user-avatar mb-2">`
+                        : `<div class="user-avatar mb-2"><i class="fas fa-user"></i></div>`;
+
+                    const item = document.createElement('div');
+                    item.className = 'candidate-item user-card p-2 rounded';
+                    item.innerHTML = `
+                        ${avatarHtml}
+                        <div class="small fw-bold text-truncate" style="max-width: 100%;">${user.name}</div>
+                        <div class="small text-muted" style="font-size: 0.7rem;">${user.department}</div>
+                        
+                        <div class="mt-2">
+                            <span class="badge bg-secondary">残務: ${user.current_load}</span>
+                            ${matchHtml}
+                        </div>
+                    `;
+                    
+                    item.onclick = () => {
+                        // 選択状態切り替え
+                        document.querySelectorAll('.user-card').forEach(el => el.classList.remove('selected'));
+                        item.classList.add('selected');
+                        
+                        selectedUserId = user.id;
+                        document.getElementById('selectedUserDisplay').textContent = `選択中: ${user.name} さん`;
+                        
+                        // 実行ボタン有効化
+                        const btn = document.getElementById('btnExecuteAssign');
+                        btn.disabled = false;
+                        btn.textContent = `「${user.name}」さんに割り振る`;
+                    };
+                    
+                    container.appendChild(item);
+                });
+            });
+    }
+
+    // ユーザー名検索ボタン
+    document.getElementById('btnSearchUser').addEventListener('click', () => {
+        const name = document.getElementById('userSearchInput').value;
+        fetchAndRenderUsers(selectedTaskId, name);
+    });
+
+
+    // ==========================================
+    // 3. 割り当て実行
+    // ==========================================
+    document.getElementById('btnExecuteAssign').addEventListener('click', () => {
+        if (!selectedTaskId || !selectedUserId) return;
+
+        const data = {
+            task_id: selectedTaskId,
+            user_id: selectedUserId,
+            due_date: document.getElementById('assignDueDate').value,
+            notes: document.getElementById('assignNotes').value
+        };
+
+        fetch(`{% url 'api_execute_assignment' %}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === 'success') {
+                alert(result.message);
+                // 完了後はタスクボードや登録画面など適切な場所へリダイレクト
+                window.location.href = "{% url 'task_board_page' %}"; 
+            } else {
+                alert('エラーが発生しました: ' + result.message);
+            }
+        });
+    });
+
+});
+</script>
+{% endblock %}

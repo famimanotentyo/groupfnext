@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/your_style_file.css' %}">
+{% endblock %}
+{% block title %}マニュアル承認{% endblock %}
+{% block content %}
+    <div class="container-fluid px-lg-4 py-3">
+        <section class="approval-page">
+            <div class="page-header">
+                <h2 class="mb-0">マニュアル承認</h2>
+            </div>
+
+            <!-- コントロールエリア -->
+            <div class="approval-controls">
+                <div class="status-filter">
+                    <a href="#" class="filter-btn active">未承認</a>
+                    <span class="item-count">{{ unapproved_manuals|length }}件</span>
+                </div>
+                <div class="sort-control">
+                    <select class="sort-select">
+                        <option>並び替え</option>
+                        <option>名前 昇順</option>
+                        <option>名前 降順</option>
+                        <option>日時 新しい順</option>
+                        <option>日時 古い順</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="approval-table">
+                    <thead>
+                        <tr>
+                            <th class="col-name">名前</th>
+                            <th class="col-date">日時</th>
+                            <th class="col-type">種類</th>
+                            <th class="col-detail">詳細</th>
+                            <th class="col-approve">承認</th>
+                            <th class="col-reject">否認</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for manual in unapproved_manuals %}
+                        <tr>
+                            <td>天才入部届</td>
+                            <td>2025/11/10</td>
+                            <td><span class="file-type pdf">PDF</span></td>
+                            <td><a href="#" class="btn-details">詳細</a></td>
+                            <td><button class="btn-approve">〇</button></td>
+                            <td><button class="btn-reject">×</button></td>
+                        </tr>
+                        <tr>
+                            <td>厳正猫飯指南</td>
+                            <td>2025/11/10</td>
+                            <td><span class="file-type excel">Excel</span></td>
+                            <td><a href="#" class="btn-details">詳細</a></td>
+                            <td><button class="btn-approve">〇</button></td>
+                            <td><button class="btn-reject">×</button></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">承認待ちのマニュアルはありません。</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+{% endblock %}

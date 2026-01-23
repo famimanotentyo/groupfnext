@@ -1,0 +1,43 @@
+{# groupf/tasks/templates/tasks/management_support.html #}
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-3">
+    
+    <section>
+        <div class="page-header">
+            <h2 class="mb-0">マネジメント支援メニュー</h2>
+        </div>
+
+        {# ★★★ マネジメント支援メニューカード ★★★ #}
+        <div class="row g-4 justify-content-center">
+            
+            {# --- メンバータグ表示 --- #}
+            <div class="col-lg-6">
+                <a href="{% url 'member_list' %}" class="card-menu-horizontal h-100">
+                    <i class="card-icon fas fa-users"></i>
+                    <div class="card-text">
+                        <h3 class="card-title">メンバータグ表示</h3>
+                        <p class="card-description">メンバーのタグを閲覧できます</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        {# ★★★ 下の行（中央に配置した1つのボタン） ★★★ #}
+        <div class="row g-4 justify-content-center mt-4">
+            <div class="col-lg-6">
+                <a href="{% url 'interview_request_page' %}" class="card-menu-horizontal h-100">
+                    <i class="card-icon fas fa-calendar-alt"></i>
+                    <div class="card-text">
+                        <h3 class="card-title">面談日程調整</h3>
+                        <p class="card-description">面談の日程を調整します</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+    </section>
+
+</div>
+{% endblock %}

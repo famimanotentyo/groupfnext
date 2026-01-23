@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}面談シナリオ作成 - AIアシスタント{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 800px;">
+    <h2 class="h3 mb-4"><i class="fas fa-robot text-primary"></i> AI面談シナリオ作成</h2>
+    
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <p class="text-muted mb-4">
+                面談の相手とテーマを入力してください。<br>
+                AIが過去のデータ（部下の特性）を分析し、最適なトークスクリプトとアドバイスを生成します。
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">1. 誰と面談しますか？</label>
+                    <select name="employee" class="form-select" required>
+                        <option value="" selected disabled>部下を選択してください</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp.id }}">{{ emp.last_name }} {{ emp.first_name }} ({{ emp.department.name|default:"-" }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">2. 面談のテーマ・目的は？</label>
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm me-1" onclick="setTheme('来期の目標設定について')">目標設定</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm me-1" onclick="setTheme('最近の業務のフィードバック')">評価FB</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm me-1" onclick="setTheme('最近元気がないようだが相談に乗る')">モチベーション</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm me-1" onclick="setTheme('遅刻が続いている件について指導')">指導・叱責</button>
+                    </div>
+                    <input type="text" name="theme" id="themeInput" class="form-control" placeholder="例：最近のプロジェクトの進捗確認と、キャリア相談" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">3. 場所</label>
+                    <input type="text" name="location" class="form-control" placeholder="例：会議室A、オンライン(Zoom)" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">4. 日時（予定）</label>
+                    <input type="datetime-local" name="scheduled_at" class="form-control" style="max-width: 300px;">
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-magic"></i> AIシナリオを生成する
+                    </button>
+                    <small class="text-center text-muted mt-2">※生成には10秒ほどかかる場合があります</small>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function setTheme(text) {
+    document.getElementById('themeInput').value = text;
+}
+</script>
+{% endblock %}

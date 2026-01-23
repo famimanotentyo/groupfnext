@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}初回ログイン{% endblock %}
+
+{% block content %}
+  {# actionにはプロフィール登録画面のURLを指定します #}
+  <form action="{% url 'profile_registration_page' %}" method="get">
+    {# 実際にはPOSTで認証処理を挟みますが、画面遷移のデモのためGETにしています #}
+    
+    <div class="mb-4">
+      <label for="employeeId" class="form-label">社員ID</label>
+      <input type="text" class="form-control form-control-lg" id="employeeId" name="employee_id" required>
+    </div>
+
+    <div class="mb-4">
+      <label for="password" class="form-label">パスワード</label>
+      <input type="password" class="form-control form-control-lg" id="password" name="password" required>
+    </div>
+
+    <div class="d-grid mt-5">
+      <button type="submit" class="btn btn-outline-secondary btn-lg">
+        ログイン
+      </button>
+    </div>
+
+  </form>
+{% endblock %}

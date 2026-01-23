@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container" style="padding: 20px; max-width: 960px; margin: auto;">
+    <h1>{{ manual.title }}</h1>
+    <hr>
+    <div style="color: #6c757d; margin-bottom: 20px;">
+        <span>作成者: {{ manual.author.username }}</span> | 
+        <span>作成日: {{ manual.created_at|date:"Y年m月d日" }}</span>
+    </div>
+    
+    <div class="manual-content" style="background-color: #f9f9f9; border: 1px solid #eee; padding: 20px; border-radius: 5px; min-height: 300px;">
+        <p>{{ manual.content|linebreaksbr }}</p>
+    </div>
+
+    <div style="margin-top: 30px;">
+        <a href="{% url 'manual_list' %}" style="text-decoration: none; padding: 10px 20px; background-color: #6c757d; color: white; border-radius: 5px;">
+            一覧に戻る
+        </a>
+    </div>
+</div>
+{% endblock %}

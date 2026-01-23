@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}面談フィードバック - AIアシスタント{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 700px;">
+    <h2 class="h3 mb-4">面談フィードバック</h2>
+    <p class="text-muted">
+        お疲れ様でした！<br>
+        面談の結果を記録してください。AIがこれを学習し、次回の提案内容を改善します。
+    </p>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- 1. 総合評価 -->
+                <div class="mb-5 text-center">
+                    <label class="form-label d-block fw-bold mb-3">Q1. 全体的な手応えはどうでしたか？</label>
+                    
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="evaluation" id="eval1" value="3" checked>
+                        <label class="btn btn-outline-success py-3" for="eval1">
+                            <i class="fas fa-smile fa-3x d-block mb-2"></i>
+                            うまくいった
+                        </label>
+
+                        <input type="radio" class="btn-check" name="evaluation" id="eval2" value="2">
+                        <label class="btn btn-outline-secondary py-3" for="eval2">
+                            <i class="fas fa-meh fa-3x d-block mb-2"></i>
+                            普通・保留
+                        </label>
+
+                        <input type="radio" class="btn-check" name="evaluation" id="eval3" value="1">
+                        <label class="btn btn-outline-danger py-3" for="eval3">
+                            <i class="fas fa-tired fa-3x d-block mb-2"></i>
+                            イマイチ
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 2. 反応タグ -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Q2. 部下の反応で目立ったものは？（複数選択）</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <!-- ポジティブ -->
+                        <input type="checkbox" class="btn-check" name="tags" id="tag1" value="納得した">
+                        <label class="btn btn-outline-primary" for="tag1">納得した</label>
+
+                        <input type="checkbox" class="btn-check" name="tags" id="tag2" value="感謝された">
+                        <label class="btn btn-outline-primary" for="tag2">感謝された</label>
+
+                        <input type="checkbox" class="btn-check" name="tags" id="tag3" value="やる気が出た">
+                        <label class="btn btn-outline-primary" for="tag3">やる気が出た</label>
+                        
+                        <input type="checkbox" class="btn-check" name="tags" id="tag4" value="アイデアが出た">
+                        <label class="btn btn-outline-primary" for="tag4">アイデアが出た</label>
+
+                        <!-- ネガティブ/その他 -->
+                        <input type="checkbox" class="btn-check" name="tags" id="tag5" value="沈黙した">
+                        <label class="btn btn-outline-warning" for="tag5">沈黙した</label>
+
+                        <input type="checkbox" class="btn-check" name="tags" id="tag6" value="反論が多かった">
+                        <label class="btn btn-outline-warning" for="tag6">反論が多かった</label>
+
+                        <input type="checkbox" class="btn-check" name="tags" id="tag7" value="言い訳した">
+                        <label class="btn btn-outline-warning" for="tag7">言い訳した</label>
+                        
+                        <input type="checkbox" class="btn-check" name="tags" id="tag8" value="泣いてしまった">
+                        <label class="btn btn-outline-warning" for="tag8">泣いてしまった</label>
+
+                        <input type="checkbox" class="btn-check" name="tags" id="tag9" value="上の空だった">
+                        <label class="btn btn-outline-warning" for="tag9">上の空だった</label>
+                    </div>
+                </div>
+
+                <!-- 3. メモ -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Q3. 気づいたこと（任意）</label>
+                    <textarea name="memo" class="form-control" rows="3" placeholder="例：論理的に説明したら納得してくれた。「データを見せて」と言われた。"></textarea>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-paper-plane"></i> 記録してAIを賢くする
+                    </button>
+                    <small class="text-center text-muted mt-2">※AIによる再分析には数秒かかります</small>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

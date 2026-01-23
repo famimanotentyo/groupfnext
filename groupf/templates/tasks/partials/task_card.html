@@ -1,0 +1,46 @@
+<div class="task-card bg-white p-3 rounded shadow-sm mb-2" 
+     style="cursor: pointer;"
+     data-bs-toggle="modal" 
+     data-bs-target="#taskDetailModal"
+     
+     data-id="{{ task.id }}"
+     data-title="{{ task.title }}"
+     data-due="{{ task.due_date|date:'Y/m/d H:i' }}"
+     
+     {# ★★★ 修正箇所 1: data属性内のユーザー名 ★★★ #}
+     data-assignees="{% for user in task.assigned_users.all %}{{ user.last_name }} {{ user.first_name }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+     
+     data-tags="{% for tag in task.tags.all %}#{{ tag.name }} {% endfor %}"
+     data-notes="{{ task.notes }}"
+     data-created="{{ task.created_at|date:'Y/m/d' }}"
+     data-status="{{ task.status.code }}"
+     
+     data-is-assignee="{% if request.user in task.assigned_users.all %}true{% else %}false{% endif %}"
+     data-is-completed-by-me="{% if request.user in task.completed_users.all %}true{% else %}false{% endif %}"
+     >
+    
+    <h5 class="mb-1 fs-6 fw-bold">{{ task.title }}</h5>
+    
+    <div class="d-flex justify-content-between align-items-center">
+        <small class="text-muted">
+            担当: 
+            {% if task.assigned_users.exists %}
+                {% for user in task.assigned_users.all %}
+                    {# ★★★ 修正箇所 2: 表示用のユーザー名 ★★★ #}
+                    {{ user.last_name }} {{ user.first_name }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            {% else %}
+                <span class="text-danger">未定</span>
+            {% endif %}
+        </small>
+    </div>
+
+    <div class="mt-2">
+        {% for tag in task.tags.all|slice:":3" %}
+            <span class="badge bg-light text-dark border me-1">{{ tag.name }}</span>
+        {% endfor %}
+        {% if task.tags.count > 3 %}
+            <span class="badge bg-light text-dark border">...</span>
+        {% endif %}
+    </div>
+</div>

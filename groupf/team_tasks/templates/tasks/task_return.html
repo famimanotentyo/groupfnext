@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .form-container {
+        padding: 40px 60px;
+        max-width: 800px;
+    }
+
+    .form-group {
+        margin-bottom: 30px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 18px;
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    /* 入力欄（黒枠・背景白） */
+    .form-input {
+        width: 100%;
+        border: 1px solid #000;
+        padding: 12px;
+        font-size: 16px;
+        background-color: #fff;
+        box-sizing: border-box;
+    }
+
+    /* 読み取り専用（タスク名・期限）の見た目 */
+    .form-input[readonly] {
+        background-color: #fff; /* 画像に合わせて白のまま */
+        outline: none;
+    }
+
+    /* 返却ボタン */
+    .submit-btn {
+        width: 100%;
+        padding: 25px;
+        background-color: #fff;
+        border: 1px solid #000;
+        font-size: 24px;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: background-color 0.2s;
+    }
+
+    .submit-btn:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+
+<div class="form-container">
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- タスク名 -->
+        <div class="form-group">
+            <label class="form-label">タスク名</label>
+            <input type="text" class="form-input" value="{{ task.title }}" readonly>
+        </div>
+
+        <!-- 期限 -->
+        <div class="form-group">
+            <label class="form-label">期限</label>
+            <input type="text" class="form-input" value="{{ task.due_date|date:'Y/m/d H:i' }}" readonly>
+        </div>
+
+        <!-- 返却理由 -->
+        <div class="form-group">
+            <label class="form-label">返却理由</label>
+            <input type="text" name="return_reason" class="form-input" placeholder="理由を入力してください" required>
+        </div>
+
+        <!-- ボタン -->
+        <button type="submit" class="submit-btn">
+            タスクを返却
+        </button>
+    </form>
+</div>
+{% endblock %}

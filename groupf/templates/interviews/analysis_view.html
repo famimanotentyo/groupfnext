@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}部下データ分析 - AIアシスタント{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 900px;">
+    
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h5 class="text-muted mb-0">AIマネジメント分析</h5>
+            <h2 class="h3">{{ target_user.last_name }} {{ target_user.first_name }} さんの取扱説明書</h2>
+        </div>
+        <div>
+            <a href="{% url 'interview_home' %}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left"></i> 面談TOPへ戻る
+            </a>
+            <a href="{% url 'interview_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> この部下との面談を作る
+            </a>
+        </div>
+    </div>
+
+
+    {% if analysis %}
+        <div class="card shadow border-info mb-4">
+            <div class="card-header bg-info text-white d-flex justify-content-between">
+                <span><i class="fas fa-brain"></i> AI分析レポート</span>
+                <small>最終更新: {{ analysis.last_updated|date:"Y/m/d H:i" }}</small>
+            </div>
+            <div class="card-body bg-white">
+                <div style="white-space: pre-wrap; font-family: sans-serif; line-height: 1.8;">{{ analysis.analysis_text }}</div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-secondary text-center py-5">
+            <i class="fas fa-folder-open fa-3x mb-3 text-muted"></i>
+            <h4>まだ分析データがありません</h4>
+            <p>
+                面談を行い、フィードバックを記録すると、<br>
+                AIが部下の特性を学習してここにレポートを作成します。
+            </p>
+            <a href="{% url 'interview_create' %}" class="btn btn-primary mt-3">最初の面談を計画する</a>
+        </div>
+    {% endif %}
+
+    <h4 class="h5 mt-5 mb-3 border-bottom pb-2">過去の面談履歴</h4>
+    <div class="list-group shadow-sm">
+        {% for interview in target_user.received_interviews.all|dictsortreversed:"scheduled_at" %}
+        <div class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1 text-primary">{{ interview.theme }}</h5>
+                <small>{{ interview.scheduled_at|date:"Y/m/d" }}</small>
+            </div>
+            <div class="mt-2">
+                {% if interview.feedback %}
+                    <span class="badge 
+                        {% if interview.feedback.evaluation == 3 %}text-bg-success
+                        {% elif interview.feedback.evaluation == 2 %}text-bg-secondary
+                        {% else %}text-bg-danger{% endif %} me-2">
+                        総合評価: {{ interview.feedback.get_evaluation_display }}
+                    </span>
+                    {% for tag in interview.feedback.tags %}
+                        <span class="badge rounded-pill bg-light text-dark border me-1">{{ tag }}</span>
+                    {% endfor %}
+                {% else %}
+                    <span class="badge bg-warning text-dark">フィードバック未入力</span>
+                    <a href="{% url 'interview_feedback' interview.pk %}" class="btn btn-sm btn-outline-success ms-2 py-0">入力する</a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="list-group-item text-muted">履歴はありません。</div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

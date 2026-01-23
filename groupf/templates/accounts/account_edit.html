@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}アカウント編集 - プロジェクト管理{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 800px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3">アカウント編集: {{ target_user.last_name }} {{ target_user.first_name }}</h2>
+        <a href="{% url 'account_list_page' %}" class="btn btn-outline-secondary">一覧に戻る</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <h5 class="mb-3 border-bottom pb-2">基本情報</h5>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.last_name.label }}</label>
+                        {{ form.last_name }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.first_name.label }}</label>
+                        {{ form.first_name }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.last_name_kana.label }}</label>
+                        {{ form.last_name_kana }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.first_name_kana.label }}</label>
+                        {{ form.first_name_kana }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.email.label }}</label>
+                    {{ form.email }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.employee_number.label }}</label>
+                    {{ form.employee_number }}
+                </div>
+
+                <h5 class="mb-3 border-bottom pb-2 mt-4">所属・権限</h5>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.department.label }}</label>
+                        {{ form.department }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.role.label }}</label>
+                        {{ form.role }}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.hire_date.label }}</label>
+                        {{ form.hire_date }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.birth_date.label }}</label>
+                        {{ form.birth_date }}
+                    </div>
+                </div>
+
+                <h5 class="mb-3 border-bottom pb-2 mt-4">アカウント状態・セキュリティ</h5>
+                <div class="mb-3 form-check form-switch">
+                    {{ form.is_active }}
+                    <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                        {{ form.is_active.label }}
+                    </label>
+                    <div class="form-text">無効にすると、このユーザーはログインできなくなります（論理削除）。</div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label d-block">パスワード設定</label>
+                    <a href="#" class="btn btn-outline-danger btn-sm"
+                        onclick="alert('パスワードリセット機能は現在準備中です。\n（本来はここにリセットメール送信機能などを実装します）'); return false;">
+                        <i class="fas fa-key"></i> パスワードリセット（仮）
+                    </a>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary px-4">保存する</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

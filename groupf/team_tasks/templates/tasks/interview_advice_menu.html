@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}面談{% endblock %}
+
+{% block content %}
+<section>
+    <div class="page-header">
+        <h2 class="mb-0">面談</h2>
+    </div>
+
+    <div class="advice-menu-container">
+        <!-- 「日程調整」カード。クリックすると面談依頼フォームに遷移します -->
+        <a href="{% url 'interview_request_page' %}" class="advice-menu-card">
+            <div class="card-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <span class="card-title">日程調整</span>
+        </a>
+
+        <!-- 「AIアドバイス」カード。リンク先はまだないので # にしておきます -->
+        <a href="" class="advice-menu-card">
+            <div class="card-icon">
+                <i class="fas fa-solid fa-desktop"></i>
+            </div>
+            <span class="card-title">AIアドバイス</span>
+        </a>
+    </div>
+</section>
+{% endblock %}

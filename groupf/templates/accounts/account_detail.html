@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}マイページ - プロジェクト管理{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-card {
+        max-width: 800px;
+        margin: 3rem auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    .profile-header {
+        background-color: #1A6977;
+        color: white;
+        padding: 3rem 2rem;
+        text-align: center;
+    }
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        background-color: #fff;
+        color: #1A6977;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 3.5rem;
+        margin: 0 auto 1rem;
+        /* 画像がはみ出さないように */
+        overflow: hidden; 
+        border: 4px solid rgba(255, 255, 255, 0.3); /* 少し枠線を付けるとおしゃれ */
+    }
+
+    /* 追加: 画像を枠いっぱいに表示するスタイル */
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* 画像の比率を保ったままトリミング */
+    }
+
+    .profile-name {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .profile-role {
+        display: inline-block;
+        padding: 0.4rem 1.2rem;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+    .profile-body {
+        padding: 3rem;
+    }
+    .detail-item {
+        border-bottom: 1px solid #f0f0f0;
+        padding: 1.2rem 0;
+        display: flex;
+        align-items: center;
+    }
+    .detail-item:last-child {
+        border-bottom: none;
+    }
+    .detail-label {
+        width: 140px;
+        font-weight: 600;
+        color: #6c757d;
+        flex-shrink: 0;
+    }
+    .detail-value {
+        color: #333;
+        font-weight: 500;
+    }
+    
+    /* ★★★ ボタンエリアのレイアウト（横並び） ★★★ */
+    .action-area {
+        background-color: #f8f9fa;
+        padding: 2rem;
+        border-top: 1px solid #eee;
+        
+        /* Flexboxで横並び・中央揃え */
+        display: flex;
+        justify-content: center;
+        gap: 20px; /* ボタン間の隙間 */
+    }
+    
+    /* ★★★ ボタンのデザイン（元のデザインを復元） ★★★ */
+    .btn-edit {
+        background-color: #1A6977; /* ヘッダーと同じ濃い青緑 */
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 5px;
+        text-decoration: none;
+        transition: background-color 0.3s;
+        font-size: 1.1rem;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        min-width: 160px; /* 幅を揃える */
+    }
+    .btn-edit:hover {
+        background-color: #13505b;
+        color: white;
+    }
+
+    .btn-logout {
+        background-color: #dc3545; /* 赤色 */
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 5px;
+        text-decoration: none;
+        transition: background-color 0.3s;
+        font-size: 1.1rem;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        min-width: 160px; /* 幅を揃える */
+    }
+    .btn-logout:hover {
+        background-color: #bb2d3b;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="profile-card">
+        
+        <div class="profile-header">
+            <div class="profile-avatar">
+                {# ★ここを修正: 画像があれば表示、なければアイコン #}
+                {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="Avatar">
+                {% else %}
+                    <i class="fas fa-user"></i>
+                {% endif %}
+            </div>
+            <div class="profile-name">
+                {{ user.last_name }} {{ user.first_name }}
+            </div>
+            <div class="profile-role">
+                {% if user.role %}
+                    {{ user.role.name }}
+                {% else %}
+                    (権限なし)
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="profile-body">
+            <div class="detail-item">
+                <div class="detail-label">社員番号</div>
+                <div class="detail-value">{{ user.employee_number }}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">フリガナ</div>
+                <div class="detail-value">{{ user.last_name_kana }} {{ user.first_name_kana }}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">所属部署</div>
+                <div class="detail-value">
+                    {% if user.department %}
+                        {{ user.department.name }}
+                    {% else %}
+                        <span class="text-muted">未所属</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">メールアドレス</div>
+                <div class="detail-value">{{ user.email }}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">電話番号</div>
+                <div class="detail-value">{{ user.phone_number|default:"-" }}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">入社日</div>
+                <div class="detail-value">{{ user.hire_date|date:"Y年n月j日"|default:"-" }}</div>
+            </div>
+        </div>
+
+        {# ★★★ ボタンエリア（クラス名を修正） ★★★ #}
+        <div class="action-area">
+            {# 1. 編集ボタン #}
+            <a href="{% url 'profile_edit_page' %}" class="btn-edit">
+                <i class="fas fa-edit me-2"></i>情報を編集
+            </a>
+
+            {# 2. ログアウトボタン #}
+            <form action="{% url 'account_logout_view_page' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn-logout">
+                    <i class="fas fa-sign-out-alt me-2"></i>ログアウト
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

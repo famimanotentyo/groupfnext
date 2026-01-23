@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}タスクの譲渡{% endblock %}
+
+{% block content %}
+<style>
+    .transfer-form-section {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 25px 30px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #495057;
+    }
+    .form-group input[type="text"],
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 1em;
+    }
+    .form-group input[readonly] {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+    /* 検索窓のスタイル */
+    .search-input-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .btn-search {
+        padding: 0 20px;
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .btn-search:hover {
+        background-color: #5a6268;
+    }
+    .btn-submit {
+        width: 100%;
+        padding: 12px;
+        font-size: 1.1em;
+        font-weight: bold;
+        color: #fff;
+        background-color: #0d6efd;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .btn-submit:hover {
+        background-color: #0b5ed7;
+    }
+    .btn-cancel {
+        display: block;
+        text-align: center;
+        margin-top: 15px;
+        color: #6c757d;
+        text-decoration: none;
+        font-size: 0.9em;
+    }
+    #search-msg {
+        font-size: 0.85em;
+        margin-bottom: 5px;
+        color: #0d6efd;
+    }
+</style>
+
+<section class="transfer-form-section">
+    <h1 style="text-align: center; margin-bottom: 30px;">タスクの譲渡</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label>タスク名</label>
+            <input type="text" value="{{ task.title }}" readonly>
+        </div>
+
+        <div class="form-group">
+            <label for="user_keyword">譲渡先を名前で検索</label>
+            <div class="search-input-group">
+                <input type="text" id="user_keyword" placeholder="氏名を入力（例：佐藤）">
+                <button type="button" id="btn-search-user" class="btn-search">検索</button>
+            </div>
+            
+            <div id="search-msg"></div>
+            <select id="assignee_id" name="assignee_id" required>
+                <option value="" disabled selected>-- 検索して候補を選択 --</option>
+                <!-- JSでここに候補が追加されます -->
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="reason">譲渡理由</label>
+            <textarea id="reason" name="reason" rows="3" placeholder="譲渡する理由を入力してください（任意）"></textarea>
+        </div>
+
+        <div class="form-group" style="margin-top: 30px;">
+            <button type="submit" class="btn-submit">タスクを譲渡する</button>
+            <a href="{% url 'my_tasks_page' %}" class="btn-cancel">キャンセルして戻る</a>
+        </div>
+    </form>
+</section>
+
+<script>
+    document.getElementById('btn-search-user').addEventListener('click', function() {
+        const keyword = document.getElementById('user_keyword').value;
+        const msgArea = document.getElementById('search-msg');
+        const select = document.getElementById('assignee_id');
+
+        if (!keyword) {
+            alert('名前を入力してください');
+            return;
+        }
+
+        msgArea.textContent = '検索中...';
+
+        // 既存のURL設定にある api-recommend-users を利用
+        fetch(`/api/recommend-users/?user_name=${encodeURIComponent(keyword)}`)
+            .then(response => response.json())
+            .then(data => {
+                // セレクトボックスをクリア
+                select.innerHTML = '<option value="" disabled selected>-- 候補から選択してください --</option>';
+                
+                if (data.users && data.users.length > 0) {
+                    data.users.forEach(user => {
+                        // 自分自身は除外（API側で除外されていない場合の念押し）
+                        // ※ request.user.id はJSでは直接取れないため、必要なら views から渡す
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = `${user.name} (${user.department})`;
+                        select.appendChild(option);
+                    });
+                    msgArea.textContent = `${data.users.length} 名見つかりました。`;
+                } else {
+                    msgArea.textContent = '見つかりませんでした。別の名前を試してください。';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                msgArea.textContent = '検索中にエラーが発生しました。';
+            });
+    });
+</script>
+{% endblock %}

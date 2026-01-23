@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}面談依頼の確認{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 700px;">
+    <h2 class="h3 mb-4 border-bottom pb-2">面談依頼の確認</h2>
+
+    {% if interview.status.code == 'confirmed' or interview.status.code == 'completed' %}
+    <div class="alert alert-success d-flex align-items-center mb-4">
+        <i class="fas fa-check-circle fs-4 me-3"></i>
+        <div>
+            <strong>承諾済みです</strong><br>
+            この面談リクエストは既に承諾されています。
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">面談詳細</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="text-muted small">担当マネージャー</label>
+                <div class="fw-bold">{{ interview.manager.last_name }} {{ interview.manager.first_name }}</div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="text-muted small">日時</label>
+                <div class="fs-5 fw-bold">{{ interview.scheduled_at|date:"Y年m月d日 (D) H:i" }}</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="text-muted small">場所</label>
+                <div class="fw-bold">{{ interview.location|default:"未定" }}</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="text-muted small">テーマ</label>
+                <div class="fw-bold">{{ interview.theme }}</div>
+            </div>
+        </div>
+    </div>
+
+    {% if interview.status.code == 'tentative' %}
+    <form method="post" class="text-center">
+        {% csrf_token %}
+        <p class="text-muted mb-3">上記の日時・場所で問題なければ、承諾ボタンを押してください。</p>
+        <div class="d-grid gap-2 col-md-6 mx-auto">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-check me-2"></i>承諾する
+            </button>
+            <a href="{% url 'notifications_index' %}" class="btn btn-outline-secondary">保留して戻る</a>
+        </div>
+    </form>
+    {% else %}
+    <div class="text-center">
+        <a href="{% url 'notifications_index' %}" class="btn btn-secondary">一覧に戻る</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

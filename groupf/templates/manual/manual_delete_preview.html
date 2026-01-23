@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="container" style="padding: 20px;">
+        <a href="{% url 'manual_delete_select_list' %}" style="padding: 10px; border: 1px solid #ccc; text-decoration: none; display: inline-block; margin-bottom: 20px;">
+            &lt; 戻る
+        </a>
+
+        <div style="border: 1px solid #ccc; padding: 20px; max-width: 600px; margin: auto;">
+            <p><strong>タイトル：</strong>{{ manual.title }}</p>
+            <p><strong>作成日　：</strong>{{ manual.created_at|date:"Y/m/d" }}</p>
+            <p><strong>作成者　：</strong>{{ manual.author.username }}</p>
+            <p><strong>詳細　　：</strong>{{ manual.content|linebreaksbr }}</p>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="{% url 'manual_delete_execute' manual.pk %}" style="padding: 15px 30px; border: 1px solid #ccc; text-decoration: none; color: #c00; font-weight: bold;">
+                選択したマニュアルを削除する
+            </a>
+            <a href="{% url 'manual_delete_select_list' %}" style="padding: 15px 30px; border: 1px solid #ccc; text-decoration: none; margin-left: 20px;">
+                キャンセル
+            </a>
+        </div>
+    </div>
+{% endblock %}

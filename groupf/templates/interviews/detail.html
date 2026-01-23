@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}面談シナリオ結果 - AIアシスタント{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 900px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h3">AI生成結果</h2>
+        <a href="{% url 'interview_home' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>戻る
+        </a>
+    </div>
+
+    <div class="card mb-4 border-primary">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">面談プラン: {{ interview.employee.last_name }} {{ interview.employee.first_name }} さん</h5>
+        </div>
+        <div class="card-body bg-light">
+            <p><strong>テーマ:</strong> {{ interview.theme }}</p>
+            <p><strong>日時:</strong> {{ interview.scheduled_at|date:"Y年m月d日 H:i" }}</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-5">
+        <div class="card-body">
+            <h4 class="mb-3 text-primary"><i class="fas fa-scroll"></i> トークスクリプト & アドバイス</h4>
+            <div class="p-3 bg-white border rounded" style="white-space: pre-wrap; font-family: sans-serif; line-height: 1.8;">{{ interview.script_generated }}</div>
+        </div>
+    </div>
+
+    <div class="alert alert-info d-flex align-items-center">
+        <i class="fas fa-info-circle fa-2x me-3"></i>
+        <div>
+            <strong>面談が終わったら...</strong><br>
+            フィードバックを入力して、AIに結果を学習させましょう。次回の精度が向上します。
+        </div>
+        <a href="{% url 'interview_feedback' interview.pk %}" class="btn btn-success ms-auto">
+            <i class="fas fa-check-circle"></i> フィードバックを入力する
+        </a>
+    </div>
+
+
+</div>
+{% endblock %}

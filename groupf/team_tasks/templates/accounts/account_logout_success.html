@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}ログアウト成功 - プロジェクト管理{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ▼▼▼ 修正: 画面全体に強制的に被せる設定 ▼▼▼ */
+    .logout-wrapper {
+        position: fixed;      /* 親要素のレイアウトを無視して画面に固定 */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #f8f9fa; /* 背景色（必要に応じて変更してください） */
+        z-index: 9999;        /* 他の要素より前面に表示 */
+        
+        /* 中央揃え設定 */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .logout-success-container {
+        max-width: 500px;
+        width: 90%; /* スマホ対応: 画面幅が狭いときは90%に */
+        padding: 3rem;
+        text-align: center;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+
+    .logout-success-container h2 {
+        color: #0d6efd;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+    }
+    .logout-icon {
+        font-size: 3.5rem;
+        color: #0d6efd;
+        margin-bottom: 2rem;
+    }
+    .logout-success-container p {
+        color: #6c757d;
+        font-size: 1.1rem;
+        margin-bottom: 2.5rem;
+        word-break: keep-all;
+        white-space: normal;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container-fluid">
+    
+    {# ▼▼▼ ラッパーで囲む ▼▼▼ #}
+    <div class="logout-wrapper">
+        
+        <div class="logout-success-container">
+            <div class="logout-icon">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            
+            <h2 class="h3">ログアウトしました</h2>
+            
+            <p>
+                サービスをご利用いただきありがとうございました。<br>
+                再度ログインして、プロジェクト管理システムをご利用ください。
+            </p>
+
+            <div class="d-grid">
+                <a href="{% url 'login' %}" class="btn btn-primary btn-lg">
+                    再ログイン
+                </a>
+            </div>
+        </div>
+
+    </div>
+    {# ▲▲▲ ラッパー終了 ▲▲▲ #}
+
+</div>
+{% endblock %}

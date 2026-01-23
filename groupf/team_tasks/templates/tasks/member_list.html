@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-3">
+    <div class="page-header">
+        <h2 class="mb-0">メンバー一覧</h2>
+        <p>プロフィールを確認したいメンバーを選択してください。</p>
+    </div>
+
+    <section>
+        <div class="row g-4">
+            {% for member in members %}
+            <div class="col-lg-4 col-md-6">
+                {# ★★★ ここで各メンバーのプロフィール詳細ページにリンクします ★★★ #}
+                <a href="{% url 'user_profile_detail' member.pk %}" class="card text-center text-decoration-none h-100">
+                    <div class="card-body">
+                        <i class="fas fa-user-circle fa-3x mb-3 text-secondary"></i>
+                        <h5 class="card-title">
+                            {# 姓名があれば表示、なければユーザー名を表示 #}
+                            {{ member.get_full_name|default:member.username }}
+                        </h5>
+                        <p class="card-text text-muted">{{ member.email }}</p>
+                    </div>
+                </a>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <p>表示するメンバーがいません。</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

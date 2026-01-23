@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 1100px;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">面談マネジメント</h2>
+            <p class="text-muted mb-0">チームメンバーとのエンゲージメント状況</p>
+        </div>
+        <a href="{% url 'interview_create' %}" class="btn btn-primary px-4 rounded-pill shadow-sm">
+            <i class="fas fa-plus me-2"></i>新規面談を計画
+        </a>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="p-4 bg-white rounded-4 shadow-sm h-100 border-start border-5 border-primary">
+                <div class="text-muted small mb-2 fw-bold">今月の実施率</div>
+                <div class="d-flex align-items-baseline">
+                    <span class="display-5 fw-bold text-dark me-2">42</span>
+                    <span class="text-muted fs-5">%</span>
+                </div>
+                <div class="mt-2 text-muted small"><i class="fas fa-check-circle text-success me-1"></i>3名完了 / 残り4名</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-4 bg-white rounded-4 shadow-sm h-100 border-start border-5 border-warning">
+                <div class="text-muted small mb-2 fw-bold">要アクション</div>
+                <div class="d-flex align-items-baseline">
+                    <span class="display-5 fw-bold text-dark me-2">1</span>
+                    <span class="text-muted fs-5">件</span>
+                </div>
+                <div class="mt-2 text-warning small fw-bold">フィードバック未入力あり</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-4 bg-light rounded-4 h-100 d-flex flex-column justify-content-center">
+                <a href="#" class="text-decoration-none text-dark mb-3 d-flex align-items-center">
+                    <div class="bg-white p-2 rounded-circle me-3 shadow-sm text-primary">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <span class="fw-bold">AIシナリオを作成</span>
+                </a>
+                <a href="#" class="text-decoration-none text-dark d-flex align-items-center">
+                    <div class="bg-white p-2 rounded-circle me-3 shadow-sm text-success">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <span class="fw-bold">フィードバック入力</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="fw-bold mb-3 text-secondary">
+        <i class="far fa-calendar-alt me-2"></i>直近のスケジュール
+    </h5>
+    
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0" style="min-height: 200px;">
+                <thead class="bg-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4 py-3" style="width: 20%;">日時</th>
+                        <th style="width: 25%;">メンバー</th>
+                        <th style="width: 30%;">テーマ</th>
+                        <th style="width: 15%;">ステータス</th>
+                        <th class="text-end pe-4" style="width: 10%;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for interview in upcoming_interviews %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ interview.scheduled_at|date:"m/d (D)" }}</div>
+                            <div class="small text-muted">{{ interview.scheduled_at|date:"H:i" }} - {{ interview.end_at|date:"H:i"|default:"??" }}</div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if interview.employee.avatar %}
+                                    <img src="{{ interview.employee.avatar.url }}" class="rounded-circle me-3 shadow-sm" alt="avatar" style="width: 40px; height: 40px; object-fit: cover;">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/40" class="rounded-circle me-3 shadow-sm" alt="avatar">
+                                {% endif %}
+                                <div>
+                                    <div class="fw-bold">{{ interview.employee.last_name }} {{ interview.employee.first_name }}</div>
+                                    <div class="small text-muted">{{ interview.employee.department.name|default:"部署なし" }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-muted">
+                            {{ interview.theme }}
+                        </td>
+                        <td>
+                            {% if interview.status.code == 'tentative' %}
+                                <span class="badge bg-light text-warning border border-warning rounded-pill px-3">仮予約</span>
+                            {% elif interview.status.code == 'confirmed' %}
+                                <span class="badge bg-light text-success border border-success rounded-pill px-3">準備中</span>
+                            {% elif interview.status.code == 'completed' %}
+                                <span class="badge bg-light text-secondary border border-secondary rounded-pill px-3">実施済み</span>
+                            {% else %}
+                                <span class="badge bg-light text-secondary border border-secondary rounded-pill px-3">{{ interview.status.name }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <a href="{% url 'interview_detail' interview.pk %}" class="btn btn-sm btn-light rounded-circle"><i class="fas fa-chevron-right"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">予定されている面談はありません</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="alert alert-warning border-0 shadow-sm rounded-4 d-flex align-items-center p-3" role="alert">
+        <i class="fas fa-exclamation-triangle fs-4 me-3 text-warning"></i>
+        <div class="flex-grow-1">
+            <span class="fw-bold">確認が必要です：</span> 田中 太郎さんの面談記録（1/20実施）がまだ完了していません。
+        </div>
+        <a href="#" class="btn btn-warning btn-sm fw-bold px-3 rounded-pill">入力する</a>
+    </div>
+
+</div>
+
+<style>
+    /* 全体的に丸みを帯びさせて柔らかくする */
+    .rounded-4 { border-radius: 1rem !important; }
+    
+    /* ホバー時の挙動をリッチに */
+    .btn-light:hover { background-color: #e2e6ea; }
+    
+    /* テーブルの線を消してスッキリさせる */
+    .table > :not(caption) > * > * { border-bottom-width: 0; }
+    .table tbody tr { border-bottom: 1px solid #f0f0f0; }
+    .table tbody tr:last-child { border-bottom: 0; }
+</style>
+{% endblock %}

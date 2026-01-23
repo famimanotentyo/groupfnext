@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="container" style="padding: 20px; text-align: center; max-width: 600px; margin: 50px auto;">
+        <h2 style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 30px;">
+            <i class="fa-solid fa-triangle-exclamation" style="color: #ffc107;"></i>
+            確認
+            <i class="fa-solid fa-triangle-exclamation" style="color: #ffc107;"></i>
+        </h2>
+        <p style="font-size: 1.1em;">下のマニュアルを削除します。よろしいですか？</p>
+        <p style="margin-top: 30px;"><strong>マニュアル名：{{ manual.title }}</strong></p>
+        <p style="color: #dc3545; margin-top: 20px;">※削除後は復元できません。</p>
+        <form method="post" style="margin-top: 40px;">
+            {% csrf_token %}
+            <a href="{% url 'manual_delete_preview' manual.pk %}" style="padding: 10px 40px; border: 1px solid #ccc; text-decoration: none;">
+                キャンセル
+            </a>
+            <button type="submit" style="padding: 10px 40px; border: 1px solid #c00; background-color: #dc3545; color: white; font-weight: bold; cursor: pointer; margin-left: 20px;">
+                削除
+            </button>
+        </form>
+    </div>
+{% endblock %}

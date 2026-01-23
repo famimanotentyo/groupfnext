@@ -1,0 +1,380 @@
+{# groupf/tasks/templates/tasks/task_register.html #}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}タスク登録 - プロジェクト管理{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* フォーム全体のカードスタイル */
+    .form-card {
+        background-color: #ffffff;
+        border: none;
+        border-radius: 1rem; /* 角丸を少し大きく */
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05); /* 柔らかく深い影 */
+        overflow: hidden; /* 子要素のはみ出し防止 */
+    }
+    
+    .form-header {
+        background-color: #f8f9fa;
+        padding: 2rem;
+        text-align: center;
+        border-bottom: 1px solid #eaeaea;
+    }
+
+    .form-header h2 {
+        margin: 0;
+        font-weight: 700;
+        color: #333;
+        letter-spacing: 0.5px;
+    }
+
+    .form-body {
+        padding: 3rem 2.5rem;
+    }
+
+    /* 入力フィールドのカスタマイズ */
+    .form-control, .form-select {
+        border-radius: 0.5rem;
+        border: 1px solid #ced4da;
+        padding: 0.75rem 1rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-text {
+        color: #888;
+        font-size: 0.85rem;
+        margin-top: 0.4rem;
+    }
+
+    /* マイクボタン */
+    .mic-btn-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        margin: 2rem 0;
+    }
+    
+    .microphone-button {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 2px solid #e9ecef;
+        background-color: #fff;
+        color: #6c757d;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    .microphone-button:hover {
+        border-color: #0d6efd;
+        color: #0d6efd;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(13, 110, 253, 0.15);
+    }
+    
+    .mic-label {
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: #999;
+    }
+
+    /* 登録ボタン */
+
+    .btn-submit:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(13, 110, 253, 0.25);
+    }
+
+    /* トーストメッセージ (右上表示) */
+    .toast-container {
+        position: fixed;
+        top: 80px; /* ヘッダーの高さに合わせて調整 */
+        right: 20px;
+        z-index: 1060;
+        min-width: 300px;
+    }
+    
+    .custom-alert {
+        border-radius: 0.5rem;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        opacity: 0;
+        animation: slideInRight 0.5s forwards, fadeOut 0.5s 5s forwards;
+        margin-bottom: 1rem;
+    }
+
+    /* ★追加: ボタンの色分け用スタイル */
+    .btn-submit {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s;
+        padding: 0.8rem 1rem;
+    }
+    
+    /* オレンジ (自作タスク) */
+    .btn-self {
+        background-color: #fd7e14;
+        border-color: #fd7e14;
+        color: white;
+    }
+    .btn-self:hover {
+        background-color: #e36d0d;
+        border-color: #e36d0d;
+        color: white;
+    }
+    
+    /* 青 (タスクボード) */
+    .btn-board {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: white;
+    }
+    .btn-board:hover {
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+        color: white;
+    }
+    
+    /* ★追加: ボタンの色分け用スタイル */
+    .btn-submit {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s;
+        padding: 0.8rem 1rem;
+    }
+    
+    /* オレンジ (自作タスク) */
+    .btn-self {
+        background-color: #fd7e14;
+        border-color: #fd7e14;
+        color: white;
+    }
+    .btn-self:hover {
+        background-color: #e36d0d;
+        border-color: #e36d0d;
+        color: white;
+    }
+    
+    /* 青 (タスクボード) */
+    .btn-board {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: white;
+    }
+    .btn-board:hover {
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+        color: white;
+    }
+
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; visibility: hidden; }
+    }
+
+    .input-group-text {
+        cursor: pointer;
+        background-color: #fff; /* 背景を白にして一体感を出す */
+    }
+    .input-group-text:hover i {
+        color: #0d6efd; /* ホバー時にアイコン色を変える */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+            
+            <div class="form-card">
+                <div class="form-header">
+                    <h2>{{ page_title }}</h2>
+                </div>
+                
+                <div class="form-body">
+                    <form action="{% url 'task_register_page' %}" method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            {{ form.title.label_tag }}
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="text-danger small mt-1 fw-bold">
+                                    {% for error in form.title.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            {{ form.due_date.label_tag }}
+                            <div class="input-group" id="dueDateGroup">
+                                {{ form.due_date }}
+                                <span class="input-group-text border-start-0 text-muted" id="calendarIcon">
+                                    <i class="far fa-calendar-alt"></i>
+                                </span>
+                            </div>
+                            {% if form.due_date.help_text %}
+                                <div class="form-text">{{ form.due_date.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mic-btn-wrapper">
+                            <button type="button" class="microphone-button" title="音声で入力する">
+                                <i class="fas fa-microphone-alt"></i>
+                            </button>
+                            <span class="mic-label">音声でタスクを登録</span>
+                        </div>
+
+                        <div class="mb-4">
+                            {{ form.notes.label_tag }}
+                            {{ form.notes }}
+                        </div>
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <div>
+                                    {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <div class="mt-5">
+                            {% if user.role.code == 'admin' or user.role.code == 'manager' %}
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <button type="submit" name="task_type" value="self" class="btn btn-self btn-submit w-100">
+                                            <i class="fas fa-user-check me-2"></i>自作タスク
+                                            <div class="small fw-normal mt-1" style="font-size:0.75rem;">(自分のタスクにする)</div>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button type="submit" name="task_type" value="board" class="btn btn-board btn-submit w-100">
+                                            <i class="fas fa-clipboard-list me-2"></i>タスクボード
+                                            <div class="small fw-normal mt-1" style="font-size:0.75rem;">(誰でも着手可能にする)</div>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <button type="submit" name="task_type" value="self" class="btn btn-primary btn-lg btn-submit w-100">
+                                    <i class="fas fa-plus-circle me-2"></i>Myタスクを登録
+                                </button>
+                            {% endif %}
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+    <div class="toast-container">
+        {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} custom-alert d-flex align-items-center" role="alert">
+                <div>{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- フォームのスタイル調整 ---
+        const inputs = document.querySelectorAll('input[type="text"], textarea');
+        inputs.forEach(input => input.classList.add('form-control'));
+
+        // --- 期限入力フィールドの制御 (ご要望の機能) ---
+        const dateInput = document.getElementById('id_due_date'); // Djangoが自動生成するID
+        const calendarIcon = document.getElementById('calendarIcon');
+
+        if (dateInput) {
+            // スタイル調整
+            dateInput.classList.add('form-control', 'border-end-0');
+            
+            // 1. 初期状態の制御
+            // 値が入っていない場合はテキストタイプにしてプレースホルダーを表示
+            if (!dateInput.value) {
+                dateInput.type = 'text';
+                dateInput.placeholder = '日付や時刻を選択...';
+            } else {
+                // 値がある場合（バリデーションエラー戻りなど）は日時のまま
+                dateInput.type = 'datetime-local';
+            }
+
+            // 2. フォーカス時の制御
+            dateInput.addEventListener('focus', function() {
+                this.type = 'datetime-local';
+                // カレンダーを自動で開く場合は以下を追加（お好みで）
+                if ('showPicker' in HTMLInputElement.prototype) {
+                    try { this.showPicker(); } catch(e) {}
+                }
+            });
+
+            // 3. フォーカスが外れた時の制御
+            dateInput.addEventListener('blur', function() {
+                if (!this.value) {
+                    this.type = 'text'; // 値がなければテキストに戻してプレースホルダー表示
+                }
+            });
+
+            // 4. アイコンクリック時の制御
+            if (calendarIcon) {
+                calendarIcon.addEventListener('click', function() {
+                    dateInput.type = 'datetime-local'; // まず型を日時にする
+                    dateInput.focus(); // フォーカスを当てる
+                    
+                    // ブラウザ標準のピッカーを表示するメソッド
+                    if ('showPicker' in HTMLInputElement.prototype) {
+                        try {
+                            dateInput.showPicker();
+                        } catch (error) {
+                            console.log('Picker open failed', error);
+                        }
+                    }
+                });
+            }
+        }
+
+        // --- メッセージの自動消去 ---
+        const alerts = document.querySelectorAll('.custom-alert');
+        alerts.forEach(alert => {
+            alert.addEventListener('animationend', (event) => {
+                if (event.animationName === 'fadeOut') alert.remove();
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h4 class="mb-0 fw-bold text-primary">
+                        <i class="fas fa-comment-medical me-2"></i>新規相談を作成
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        詳しい人に質問してみましょう。<br>
+                        作成された相談は、あなたと相手（回答者）だけの非公開チャットとなります。
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <!-- フォームエラー表示 -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-4">
+                            <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">相談タイトル <span
+                                    class="text-danger">*</span></label>
+                            {{ form.title }}
+                            <div class="form-text">具体的で分かりやすいタイトルをつけましょう（例: Pythonの仮想環境の作り方について）</div>
+                            {% if form.title.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.title.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.respondent.id_for_label }}" class="form-label fw-bold">誰に相談しますか？ <span
+                                    class="text-danger">*</span></label>
+                            {{ form.respondent }}
+                            <div class="form-text">相談したい相手を選択してください。</div>
+                            {% if form.respondent.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.respondent.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-5">
+                            <a href="{% url 'consultation_list_view' %}" class="btn btn-outline-secondary px-4">
+                                <i class="fas fa-arrow-left me-2"></i>戻る
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm">
+                                <i class="fas fa-paper-plane me-2"></i>相談を開始する
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

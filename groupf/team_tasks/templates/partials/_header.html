@@ -1,0 +1,39 @@
+{# groupf/tasks/templates/partials/_header.html #}
+{% load static %}
+<style>
+    /* ヘッダー内のアイコン画像を丸くする */
+    .header-avatar-img {
+        width: 40px;  /* icon-circle のサイズに合わせる */
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #fff; /* 少し枠線を入れると背景に埋もれない */
+    }
+</style>
+
+<header class="app-header">
+    <div class="menu-toggle">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    {% comment %} <a href="{% url 'top_page' %}" class="header-part logo">
+    <i class="fa-solid fa-glasses"></i></a> {% endcomment %}
+    {% comment %} <a href="{% url 'top_page' %}" class="header-part logo"> {% endcomment %}
+    <a href="{% url 'top_page' %}" class="header-part logo">
+    <img src="{% static 'tasks/img/logo.png' %}" alt="Logo" class="logo-img" style="height: 55px; width: auto;"></a>
+    <a href="#" class="header-part project-name">プロジェクト</a>
+    <div class="header-part page-title">{{ page_title }}</div>
+    <div class="header-controls">
+        {% comment %} <a href="#"><i class="fas fa-ellipsis-h"></i></a> {% endcomment %}
+        {% comment %} <a href="#"><i class="fas fa-plus"></i></a> {% endcomment %}
+        <a href="#"><i class="fas fa-search icon-circle"></i></a>
+        <a href="{% url 'account_detail_page' %}">
+            {# ★ここを修正: 画像があればimg、なければicon #}
+            {% if user.avatar %}
+                <img src="{{ user.avatar.url }}" alt="User" class="header-avatar-img">
+            {% else %}
+                <i class="fas fa-user icon-circle"></i>
+            {% endif %}
+        </a>
+    </div>
+</header>

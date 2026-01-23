@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}アカウント作成完了 - プロジェクト管理{% endblock %}
+
+{# ★★★ このページ専用のCSSをここに記述します ★★★ #}
+{% block extra_css %}
+<style>
+    .success-container {
+        max-width: 500px;
+        margin: 4rem auto;
+        padding: 2rem;
+        text-align: center;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .success-container h2 {
+        color: #198754; /* Bootstrapの成功色 (緑) */
+        margin-bottom: 1.5rem;
+    }
+    .success-icon {
+        font-size: 3rem;
+        color: #198754;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+
+{# ★★★ メインコンテンツ部分 ★★★ #}
+{% block content %}
+<div class="container-fluid">
+    <div class="success-container">
+
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        
+        <h2 class="h3">アカウントが作成されました。</h2>
+        
+        <p class="text-muted mb-4">
+            作成されたアカウントでログインが可能です。
+        </p>
+
+        <div class="d-grid">
+            <a href="/" class="btn btn-outline-primary">
+                ToP画面に戻る
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

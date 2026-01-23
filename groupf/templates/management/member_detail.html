@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3><i class="fas fa-user-tag me-2"></i>{{ target_member.last_name }} {{ target_member.first_name }} さんのタスク一覧</h3>
+        <a href="{% url 'top_page' %}" class="btn btn-outline-secondary">ダッシュボードに戻る</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>タスク名</th>
+                        <th>期限</th>
+                        <th>状態</th>
+                        <th>種類</th>
+                        <th>依頼者</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr>
+                        <td>{{ task.title }}</td>
+                        <td>{{ task.due_date|date:"Y/m/d H:i" }}</td>
+                        <td><span class="badge bg-secondary">{{ task.status.name }}</span></td>
+                        <td>
+                            {# 自作か依頼か判定 #}
+                            {% if task.requested_by == target_member %}
+                                <span class="badge bg-warning text-dark">自作</span>
+                            {% else %}
+                                <span class="badge bg-info text-dark">依頼</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ task.requested_by.last_name }}</td>
+                    </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="text-center">タスクはありません</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}新規アカウント作成{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* フォームコンテナのスタイル */
+    .form-container {
+        max-width: 500px; /* フォームの最大幅 */
+        margin: 4rem auto; /* 上下のマージンと中央寄せ */
+        padding: 2.5rem;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .form-label {
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container">
+    <div class="form-container">
+        
+        <h2 class="text-center mb-4">新規アカウント作成</h2>
+        
+        {# action属性には、データ送信先のURLを {% url %} タグで指定してください #}
+        <form action="{% url 'account_create_page' %}" method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="department" class="form-label">所属</label>
+                <input type="text" class="form-control form-control-lg" id="department" name="department" required>
+            </div>
+
+            <div class="mb-4">
+                <label for="count" class="form-label">人数</label>
+                <input type="number" class="form-control form-control-lg" id="count" name="count" min="1" required>
+            </div>
+
+            <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-outline-secondary btn-lg">
+                    送信
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}

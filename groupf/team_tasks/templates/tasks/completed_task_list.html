@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - プロジェクト管理{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* --- タブのデザイン --- */
+    .nav-tabs .nav-link {
+        color: #495057;
+        font-weight: 500;
+        border: none;
+        border-bottom: 3px solid transparent;
+        padding: 10px 20px;
+    }
+    .nav-tabs .nav-link:hover {
+        border-color: #e9ecef;
+        color: #0d6efd;
+    }
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        border-bottom: 3px solid #0d6efd;
+        background-color: transparent;
+    }
+
+    /* --- アコーディオン（月別バー）のデザイン --- */
+    .accordion-button {
+        background-color: #f8f9fa; /* 閉じてる時の色 */
+        color: #333;
+        font-weight: bold;
+    }
+    .accordion-button:not(.collapsed) {
+        background-color: #e7f1ff; /* 開いてる時の色 */
+        color: #0c63e4;
+        box-shadow: none; /* 青い枠線を消す */
+    }
+    .month-badge {
+        margin-left: auto; /* 右寄せ */
+        background-color: #6c757d;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+
+    /* --- タスクカードのデザイン --- */
+    .task-card-simple {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        height: 100%;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .task-card-simple:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        border-color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold"><i class="fas fa-check-circle text-success me-2"></i>{{ page_title }}</h2>
+        <a href="{% url 'task_board_page' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>ボードに戻る
+        </a>
+    </div>
+
+    <form method="get" action="" class="mb-4">
+    <input type="hidden" name="filter_type" value="{{ filter_type }}">
+    
+    <label>表示月：</label>
+    <input type="month" name="month" value="{{ selected_year }}-{{ selected_month|stringformat:'02d' }}" onchange="this.form.submit()">
+</form>
+
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link {% if filter_type == 'all' %}active{% endif %}" 
+            href="?month={{ selected_year }}-{{ selected_month|stringformat:'02d' }}&filter_type=all">
+            すべて
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if filter_type == 'requested' %}active{% endif %}" 
+            href="?month={{ selected_year }}-{{ selected_month|stringformat:'02d' }}&filter_type=requested">
+            依頼されたタスク
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if filter_type == 'self' %}active{% endif %}" 
+            href="?month={{ selected_year }}-{{ selected_month|stringformat:'02d' }}&filter_type=self">
+            自作タスク
+            </a>
+        </li>
+    </ul>
+
+    <div class="accordion" id="accordionTasks">
+        {% for group in grouped_tasks %}
+            <div class="accordion-item mb-3 border rounded overflow-hidden">
+                
+                <h2 class="accordion-header" id="heading-{{ forloop.counter }}">
+                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" 
+                            type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#collapse-{{ forloop.counter }}" 
+                            aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" 
+                            aria-controls="collapse-{{ forloop.counter }}">
+                        
+                        <span class="fs-5 me-3">
+                            <i class="far fa-calendar-alt me-2"></i>{{ group.month|date:"Y年n月" }}
+                        </span>
+                        
+                        <span class="month-badge">{{ group.count }}件</span>
+                    </button>
+                </h2>
+
+                <div id="collapse-{{ forloop.counter }}" 
+                     class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                     aria-labelledby="heading-{{ forloop.counter }}">
+                    
+                    <div class="accordion-body bg-light">
+                        <div class="row g-3">
+                            {% for task in group.tasks %}
+                                <div class="col-md-6"> <div class="task-card-simple">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h5 class="fw-bold mb-0 text-truncate" style="max-width: 80%;">
+                                                {{ task.title }}
+                                            </h5>
+                                            {% if task.requested_by == user %}
+                                            {# 依頼者が自分で、担当者に自分も入っている場合 -> 「自作」 #}
+                                            {% if user in task.assigned_users.all %}
+                                                <span class="badge bg-warning text-dark border">自作</span>
+                                            
+                                            {# 依頼者は自分だが、担当者は部下のみの場合 -> 「指示」 #}
+                                            {% else %}
+                                                <span class="badge bg-info text-dark border">依頼</span>
+                                            {% endif %}
+
+                                            {% else %}
+                                                {# 依頼者が自分ではない -> 「依頼」 #}
+                                                <span class="badge bg-info text-dark border">依頼</span>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="text-muted small mb-2">
+                                            <i class="far fa-clock me-1"></i>{{ task.updated_at|date:"Y/m/d" }} 完了
+                                            <span class="mx-2">|</span>
+                                            <i class="far fa-user me-1"></i>依頼: {{ task.requested_by.last_name }}
+                                        </div>
+
+                                        {% if task.notes %}
+                                            <div class="p-2 bg-light rounded text-secondary small text-truncate">
+                                                {{ task.notes }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="text-center py-5 text-muted bg-light rounded">
+                <i class="fas fa-inbox fa-3x mb-3 text-secondary"></i>
+                <p class="mb-0">完了したタスクはありません。</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

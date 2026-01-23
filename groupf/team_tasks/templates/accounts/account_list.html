@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}アカウント閲覧 - プロジェクト管理{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .table-hover > tbody > tr:hover {
+        cursor: pointer;
+        background-color: #f8f9fa;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 10px;
+    }
+    .detail-grid dt {
+        font-weight: bold;
+        color: #555;
+    }
+    .detail-grid dd {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    
+    <div class="page-header">
+        <h2 class="h3">メンバー</h2>
+        {# ★★★ ここから検索部分の変更 ★★★ #}
+        <div class="col-md-7 col-lg-6"> {# 幅を少し広げました #}
+            <div class="input-group">
+                <select class="form-select" id="searchCategory" style="max-width: 120px;">
+                    <option value="name" selected>名前</option>
+                    <option value="email">メール</option>
+                    <option value="department">部署</option>
+                    <option value="permission">権限</option>
+                </select>
+                <input type="text" class="form-control" placeholder="検索キーワードを入力...">
+                <button class="btn btn-primary" type="button">
+                    <i class="fas fa-search"></i> 検索
+                </button>
+            </div>
+        </div>
+        {# ★★★ 検索部分の変更ここまで ★★★ #}
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">メンバー</th>
+                            <th scope="col">メール</th>
+                            <th scope="col">部署</th>
+                            <th scope="col">権限</th>
+                            <th scope="col">最終アクティブ</th>
+                            <th scope="col">入社</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr data-bs-toggle="modal" data-bs-target="#accountDetailModal">
+                            <td>金子 ケビン</td>
+                            <td>kaneko-kevin@gmail.com</td>
+                            <td>システム開発部</td>
+                            <td>マネージャー</td>
+                            <td>2 hours ago</td>
+                            <td>2026年 4月</td>
+                        </tr>
+
+                        <tr data-bs-toggle="modal" data-bs-target="#accountDetailModal">
+                            <td>鈴木 一郎</td>
+                            <td>suzuki@gmail.com</td>
+                            <td>営業第一部</td>
+                            <td>一般</td>
+                            <td>1 day ago</td>
+                            <td>2024年 4月</td>
+                        </tr>
+
+                        <tr data-bs-toggle="modal" data-bs-target="#accountDetailModal">
+                            <td>佐藤 花子</td>
+                            <td>sato.h@gmail.com</td>
+                            <td>人事部</td>
+                            <td>管理者</td>
+                            <td>5 mins ago</td>
+                            <td>2023年 10月</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="accountDetailModal" tabindex="-1" aria-labelledby="accountDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="accountDetailModalLabel">アカウント詳細</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="detail-grid">
+                    <dt>氏名</dt>
+                    <dd>金子 ケビン</dd>
+                    <dt>所属部署</dt>
+                    <dd>システム開発部</dd>
+                    <dt>役職</dt>
+                    <dd>マネージャー</dd>
+                    <dt>メールアドレス</dt>
+                    <dd>kaneko-kevin@gmail.com</dd>
+                    <dt>社員番号</dt>
+                    <dd>000-000-123</dd>
+                    <dt>生年月日</dt>
+                    <dd>2005年 00月 00日</dd>
+                    <dt>入社日</dt>
+                    <dd>2026年 4月</dd>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                <button type="button" class="btn btn-primary">編集する</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchCategory = document.getElementById('searchCategory');
+        const searchInput = document.querySelector('.input-group input[type="text"]');
+        
+        searchCategory.addEventListener('change', function() {
+            // 選択されたカテゴリに応じてプレースホルダーを変更する（任意）
+            const selectedText = searchCategory.options[searchCategory.selectedIndex].text;
+            searchInput.placeholder = `${selectedText}で検索キーワードを入力...`;
+        });
+
+        // 検索ボタンクリック時の処理 (Djangoのビューと連携する部分)
+        document.querySelector('.input-group .btn-primary').addEventListener('click', function() {
+            const category = searchCategory.value; // 選択されたカテゴリ (name, emailなど)
+            const keyword = searchInput.value;   // 入力されたキーワード
+            
+            console.log(`検索カテゴリ: ${category}, キーワード: ${keyword}`);
+            
+            // ★★★ ここにDjangoのビューへの検索リクエストロジックを記述します ★★★
+            // 例: ウィンドウのロケーションを変更してGETリクエストを送る
+            // window.location.href = `?category=${category}&q=${keyword}`;
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,313 @@
+アカウント一覧
+
+①HTML
+{% extends 'base.html' %}
+
+{% block title %}アカウント閲覧 - プロジェクト管理{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;}
+  .table-hover > tbody > tr:hover{cursor:pointer;background-color:#f8f9fa;}
+  .detail-grid{display:grid;grid-template-columns:120px 1fr;gap:10px;}
+  .detail-grid dt{font-weight:bold;color:#555;}
+  .detail-grid dd{margin-bottom:0;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+  <div class="page-header">
+    <h2 class="h3">メンバー</h2>
+
+    <div class="col-md-7 col-lg-6">
+      <div class="input-group">
+        <select class="form-select" id="searchCategory" style="max-width:120px;">
+          <option value="name" {% if category == 'name' %}selected{% endif %}>名前</option>
+          <option value="email" {% if category == 'email' %}selected{% endif %}>メール</option>
+          <option value="department" {% if category == 'department' %}selected{% endif %}>部署</option>
+          <option value="permission" {% if category == 'permission' %}selected{% endif %}>権限</option>
+        </select>
+
+        <input id="searchInput" type="text" class="form-control"
+               placeholder="検索キーワードを入力..." value="{{ q|default:'' }}">
+
+        <button id="searchBtn" class="btn btn-primary" type="button">
+          <i class="fas fa-search"></i> 検索
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>メンバー</th>
+              <th>メール</th>
+              <th>部署</th>
+              <th>権限</th>
+              <th>最終アクティブ</th>
+              <th>入社</th>
+            </tr>
+          </thead>
+
+        <tbody>
+                {% for u in users_data %}
+                <tr
+                role="button"
+                data-bs-toggle="modal"
+                data-bs-target="#accountDetailModal"
+                data-id="{{ u.id }}"
+                data-name="{{ u.name }}"
+                data-email="{{ u.email }}"
+                data-department="{{ u.department }}"
+                data-role="{{ u.role }}"
+                data-employee="{{ u.employee_number }}"
+                data-birth="{{ u.birth_date }}"
+                data-hire="{{ u.hire_date }}"
+                data-lastactive="{{ u.last_active }}"
+            >
+
+                    <td>{{ u.name }}</td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.department }}</td>
+                    <td>{{ u.role }}</td>
+                    <td>{{ u.last_active }}</td>
+                    <td>{{ u.hire_date }}</td>
+                </tr>
+
+                {# ✅ これだけでOK。json_scriptは “単体で” 置く #}
+                {{ u.tags|json_script:u.tags_script_id }}
+                {% endfor %}
+                </tbody>
+
+
+
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# --- モーダル --- #}
+<div class="modal fade" id="accountDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">アカウント詳細</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+  <div class="row">
+    <div class="col-md-7">
+      <dl class="detail-grid" id="detailGrid">
+        <dt>氏名</dt><dd id="m_name">-</dd>
+        <dt>所属部署</dt><dd id="m_department">-</dd>
+        <dt>役職</dt><dd id="m_role">-</dd>
+        <dt>メールアドレス</dt><dd id="m_email">-</dd>
+        <dt>社員番号</dt><dd id="m_employee">-</dd>
+        <dt>生年月日</dt><dd id="m_birth">-</dd>
+        <dt>入社日</dt><dd id="m_hire">-</dd>
+        <dt>最終アクティブ</dt><dd id="m_lastactive">-</dd>
+      </dl>
+    </div>
+
+    <div class="col-md-5">
+      <h6 class="mb-2">メンバータグ</h6>
+      <div id="m_tags" class="d-flex flex-wrap gap-2"></div>
+      <small class="text-muted d-block mt-2">
+        ※完了タスクのタグから自動生成
+      </small>
+    </div>
+  </div>
+</div>
+
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+        <button type="button" class="btn btn-primary">編集する</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const modal = document.getElementById('accountDetailModal');
+
+  modal.addEventListener('show.bs.modal', function (event) {
+    const row = event.relatedTarget; // クリックされた <tr>
+
+    const id = row.dataset.id;
+
+    // 左側：基本情報
+    document.getElementById('m_name').textContent = row.dataset.name || '-';
+    document.getElementById('m_department').textContent = row.dataset.department || '-';
+    document.getElementById('m_role').textContent = row.dataset.role || '-';
+    document.getElementById('m_email').textContent = row.dataset.email || '-';
+    document.getElementById('m_employee').textContent = row.dataset.employee || '-';
+    document.getElementById('m_birth').textContent = row.dataset.birth || '-';
+    document.getElementById('m_hire').textContent = row.dataset.hire || '-';
+    document.getElementById('m_lastactive').textContent = row.dataset.lastactive || '-';
+
+    // 右側：タグ
+    const tagsBox = document.getElementById('m_tags');
+    tagsBox.innerHTML = '';
+
+    // tags-<id> のJSONを読む
+    const scriptTag = document.getElementById(`tags-${id}`);
+    let tags = [];
+    if (scriptTag) {
+      try { tags = JSON.parse(scriptTag.textContent); } catch (e) {}
+    }
+
+    if (!tags || tags.length === 0) {
+      tagsBox.innerHTML = '<span class="text-muted">タグなし（完了タスクがまだ無い）</span>';
+      return;
+    }
+
+    tags.forEach(t => {
+      const span = document.createElement('span');
+      span.className = 'badge rounded-pill text-bg-light border';
+      span.textContent = t;
+      tagsBox.appendChild(span);
+    });
+  });
+   const searchCategory = document.getElementById('searchCategory');
+  const searchInput = document.getElementById('searchInput');
+  const searchBtn = document.getElementById('searchBtn');
+
+  function doSearch() {
+    const category = searchCategory.value;
+    const keyword = searchInput.value.trim();
+
+    const params = new URLSearchParams();
+    params.set("category", category);
+    params.set("q", keyword);
+
+    // /accounts/ に GET パラメータ付きで遷移
+    window.location.href = `?${params.toString()}`;
+  }
+
+  // 検索ボタン
+  if (searchBtn) searchBtn.addEventListener('click', doSearch);
+
+  // Enterキーでも検索
+  if (searchInput) {
+    searchInput.addEventListener('keydown', function(e){
+      if (e.key === 'Enter') doSearch();
+    });
+  }
+
+  // （任意）カテゴリ変えたらplaceholder変更
+  if (searchCategory && searchInput) {
+    searchCategory.addEventListener('change', function() {
+      const selectedText = searchCategory.options[searchCategory.selectedIndex].text;
+      searchInput.placeholder = `${selectedText}で検索キーワードを入力...`;
+    });
+  }
+
+});
+</script>
+{% endblock %}
+
+②views.py
+@login_required
+def account_list_page(request):
+    category = request.GET.get("category", "name")
+    q = (request.GET.get("q") or "").strip()
+
+    users = (
+        User.objects.filter(is_active=True)
+        .select_related("department", "role")
+        .prefetch_related("completed_tasks__tags")
+        .order_by("last_name", "first_name")
+    )
+
+    # --- 検索（qがある時だけ絞り込む） ---
+    if q:
+        if category == "name":
+            users = users.filter(
+                Q(last_name__icontains=q) |
+                Q(first_name__icontains=q) |
+                Q(last_name_kana__icontains=q) |
+                Q(first_name_kana__icontains=q)
+            )
+        elif category == "email":
+            users = users.filter(email__icontains=q)
+        elif category == "department":
+            users = users.filter(department__name__icontains=q)
+        elif category == "permission":
+            users = users.filter(role__name__icontains=q)
+        else:
+            # 不正なcategoryが来たら名前検索にフォールバック
+            users = users.filter(
+                Q(last_name__icontains=q) | Q(first_name__icontains=q)
+            )
+
+    users_data = []
+    for u in users:
+        tag_names = list(u.get_completed_tags().values_list("name", flat=True))[:10]  # 最大10個表示
+        users_data.append({
+            "id": u.id,
+            "name": f"{u.last_name} {u.first_name}",
+            "email": u.email,
+            "department": u.department.name if u.department else "未所属",
+            "role": u.role.name if u.role else "-",
+            "employee_number": u.employee_number,
+            "birth_date": u.birth_date.strftime("%Y年 %m月 %d日") if u.birth_date else "-",
+            "hire_date": u.hire_date.strftime("%Y年 %m月") if u.hire_date else "-",
+            "last_active": timesince(u.last_login, timezone.now()) + " ago" if u.last_login else "-",
+            "tags": tag_names,
+            "tags_script_id": f"tags-{u.id}",
+        })
+
+    return render(request, "accounts/account_list.html", {
+        "page_title": "メンバー",
+        "users_data": users_data,
+    })
+
+③views.py
+@login_required
+def api_account_detail(request, user_id):
+    u = get_object_or_404(
+        User.objects.select_related('department', 'role')
+            .prefetch_related('completed_tasks__tags'),
+        pk=user_id,
+        is_active=True
+    )
+
+    def fmt_date(d):
+        return d.strftime('%Y年 %m月 %d日') if d else '-'
+
+    # ★タグ（完了タスクのタグ）を作る：prefetch を活かしてDB負荷も抑える
+    tag_set = set()
+    for t in u.completed_tasks.all():
+        for tag in t.tags.all():
+            tag_set.add(tag.name)
+    tag_names = sorted(tag_set)[:10]
+
+    data = {
+        "id": u.id,
+        "name": f"{u.last_name} {u.first_name}",
+        "department": u.department.name if u.department else "未所属",
+        "role": u.role.name if u.role else "-",
+        "email": u.email,
+        "employee_number": u.employee_number,
+        "birth_date": fmt_date(u.birth_date),
+        "hire_date": fmt_date(u.hire_date),
+        "tags": tag_names,  # ★追加
+    }
+    return JsonResponse(data)
+
+④urls.py
+path('api/accounts/<int:user_id>/', views.api_account_detail, name='api_account_detail'),

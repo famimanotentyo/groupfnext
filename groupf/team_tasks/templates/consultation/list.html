@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark">
+                <i class="fas fa-comments text-primary me-2"></i>相談・チャット
+            </h2>
+            <p class="text-muted mb-0">困ったときは詳しい人に相談したり、過去の解決事例（Q&A）を検索できます。</p>
+        </div>
+        <a href="{% url 'consultation_create_view' %}" class="btn btn-primary btn-lg shadow-sm">
+            <i class="fas fa-comment-medical me-2"></i>新しく相談する
+        </a>
+    </div>
+
+    <div class="card shadow-sm mb-5 bg-light border-0">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-3"><i class="fas fa-search me-2"></i>過去のQ&A（ナレッジ）から検索</h5>
+            <form method="get" action="" class="d-flex gap-2">
+                <input type="text" name="q" class="form-control form-control-lg" placeholder="キーワードを入力（例: ログインできない、Python環境構築...）">
+                <button type="submit" class="btn btn-secondary px-4">
+                    検索
+                </button>
+            </form>
+            <div class="form-text mt-2 text-muted">
+                解決済みの相談はAIによって自動的にナレッジ化され、ここで検索できるようになります。
+            </div>
+        </div>
+    </div>
+
+    <h4 class="fw-bold mb-3 border-bottom pb-2">マイ相談履歴</h4>
+    
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-primary">
+                        <i class="fas fa-question-circle me-2"></i>あなたがした相談
+                    </h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for item in my_questions %}
+                        <a href="{% url 'consultation_detail_view' pk=item.pk %}" class="list-group-item list-group-item-action py-3">
+                            <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                <span class="badge {% if item.status.code == 'resolved' %}bg-secondary{% else %}bg-success{% endif %}">
+                                    {{ item.status.name }}
+                                </span>
+                                <small class="text-muted">{{ item.updated_at|date:"Y/m/d H:i" }}</small>
+                            </div>
+                            <h6 class="mb-1 fw-bold text-truncate">{{ item.title }}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>To: {{ item.respondent.last_name }} {{ item.respondent.first_name }}
+                            </small>
+                        </a>
+                    {% empty %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="far fa-comment-dots fa-3x mb-3"></i>
+                            <p>相談履歴はありません</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-danger">
+                        <i class="fas fa-hand-holding-heart me-2"></i>あなたへの相談依頼
+                    </h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for item in received_requests %}
+                        <a href="{% url 'consultation_detail_view' pk=item.pk %}" class="list-group-item list-group-item-action py-3">
+                            <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                <span class="badge {% if item.status.code == 'resolved' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                    {{ item.status.name }}
+                                </span>
+                                <small class="text-muted">{{ item.updated_at|date:"Y/m/d H:i" }}</small>
+                            </div>
+                            <h6 class="mb-1 fw-bold text-truncate">{{ item.title }}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>From: {{ item.requester.last_name }} {{ item.requester.first_name }}
+                            </small>
+                        </a>
+                    {% empty %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="far fa-bell-slash fa-3x mb-3"></i>
+                            <p>現在、あなたへの依頼はありません</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

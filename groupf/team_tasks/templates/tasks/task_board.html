@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+
+{% block title %}タスクボード - プロジェクト管理{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* --- ボード全体 --- */
+    .kanban-board-container {
+        display: flex;
+        overflow-x: auto; /* 横スクロール有効 */
+        min-height: 80vh;
+        padding-bottom: 1.5rem;
+        gap: 15px; /* カラム同士の隙間 */
+    }
+
+    /* --- カラムの枠組み --- */
+    .kanban-column {
+        background-color: #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        flex-shrink: 0; /* 画面が狭くても勝手に縮まない */
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* 幅の設定: カード2枚分 */
+    .col-width-2 {
+        flex: 0 0 620px; /* 300px * 2 + 隙間 */
+        width: 620px;
+    }
+
+    /* 幅の設定: カード4枚分 (完了カラム用) */
+    .col-width-4 {
+        flex: 0 0 1240px; /* 300px * 4 + 隙間 */
+        width: 1240px;
+    }
+
+    /* --- カードを並べるグリッド --- */
+    .task-grid-wrapper {
+        display: flex;
+        flex-wrap: wrap; /* 折り返しを有効にする */
+        gap: 10px; /* カード間の隙間 */
+        align-content: flex-start; /* 上詰め */
+    }
+
+    /* --- カード共通設定 --- */
+    .task-card {
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        cursor: pointer;
+        transition: box-shadow 0.2s;
+    }
+    .task-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    /* カード幅の計算 (グリッド内) */
+    /* 幅2カラム内: 50% (2列) */
+    .col-width-2 .task-card {
+        width: calc(50% - 5px); /* 隙間(10px)の半分を引く */
+    }
+
+    /* 幅4カラム内: 25% (4列) */
+    .col-width-4 .task-card {
+        width: calc(25% - 7.5px); /* 隙間調整 (10px * 3 / 4) */
+    }
+
+    /* --- モーダル内のデザイン --- */
+    .modal-label {
+        font-weight: bold; color: #555; width: 100px; display: inline-block;
+    }
+    .modal-notes-area {
+        white-space: pre-wrap; background-color: #f8f9fa; padding: 10px;
+        border-radius: 5px; min-height: 60px;
+    }
+    .action-btn {
+        /* ボタンの表示切り替え時にガタつかないように */
+        min-width: 120px;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">タスクボード</h2>
+        <a href="{% url 'task_register_page' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>タスクを追加
+        </a>
+    </div>
+
+    <div class="kanban-board-container">
+        
+        {# --- 1. 未着手 (2列) --- #}
+        <div class="kanban-column col-width-2">
+            <h4 class="text-center mb-3 p-2 bg-secondary text-white rounded-top">未着手</h4>
+            <div class="task-grid-wrapper">
+                {% for task in tasks_unstarted %}
+                    {% include 'tasks/partials/task_card.html' %}
+                {% empty %}
+                    <p class="text-center text-muted small w-100">タスクはありません</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# --- 2. 着手中 (2列) --- #}
+        <div class="kanban-column col-width-2">
+            <h4 class="text-center mb-3 p-2 bg-primary text-white rounded-top">着手中</h4>
+            <div class="task-grid-wrapper">
+                {% for task in tasks_in_progress %}
+                    {% include 'tasks/partials/task_card.html' %}
+                {% endfor %}
+            </div>
+        </div>
+
+        {# --- 3. 確認待ち (2列) --- #}
+        <div class="kanban-column col-width-2">
+            <h4 class="text-center mb-3 p-2 bg-success text-white rounded-top">確認待ち</h4>
+            <div class="task-grid-wrapper">
+                {% for task in tasks_pending %}
+                    {% include 'tasks/partials/task_card.html' %}
+                {% endfor %}
+            </div>
+        </div>
+
+        {# --- 4. 完了 (4列・ワイド) --- #}
+        <div class="kanban-column col-width-4">
+            <h4 class="text-center mb-3 p-2 bg-dark text-white rounded-top">完了</h4>
+            <div class="task-grid-wrapper">
+                {% for task in tasks_completed %}
+                    {% include 'tasks/partials/task_card.html' %}
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{# ================================================== #}
+{#  同一画面で詳細を表示・操作するモーダル (POP)  #}
+{# ================================================== #}
+<div class="modal fade" id="taskDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            
+            <div class="modal-header">
+                <h5 class="modal-title fs-4 fw-bold" id="modalTitle"></h5> {# タスク名 #}
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="mb-2"><span class="modal-label">期限:</span> <span id="modalDue"></span></div>
+                <div class="mb-2"><span class="modal-label">担当者:</span> <span id="modalAssignees"></span></div>
+                <div class="mb-2"><span class="modal-label">タグ:</span> <span id="modalTags"></span></div>
+                <div class="mb-2"><span class="modal-label">作成日:</span> <span id="modalCreated"></span></div>
+                <div class="mt-3">
+                    <label class="modal-label mb-1">備考:</label>
+                    <div id="modalNotes" class="modal-notes-area"></div>
+                </div>
+            </div>
+            
+            {# モーダルのフッター部分 #}
+            <div class="modal-footer justify-content-between">
+                {# フォームタグを削除し、直接divなどで囲む #}
+                <div>
+                    <button type="button" class="btn btn-primary action-btn" id="btnStartTask" style="display: none;">
+                        <i class="fas fa-hand-paper me-2"></i>このタスクに着手する
+                    </button>
+
+                    <button type="button" class="btn btn-success action-btn" id="btnCompleteTask" style="display: none;">
+                        <i class="fas fa-check-circle me-2"></i>自分の作業を完了する
+                    </button>
+
+                    <button type="button" class="btn btn-secondary action-btn" id="btnWaitingOthers" style="display: none;" disabled>
+                        <i class="fas fa-clock me-2"></i>他のメンバーの完了待ち
+                    </button>
+
+                    {# ★追加: マネージャー用の承認ボタン #}
+                    <button type="button" class="btn btn-warning text-white action-btn" id="btnApproveTask" style="display: none;">
+                        <i class="fas fa-check-double me-2"></i>承認して完了にする
+                    </button>
+                </div>
+
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{# ================================================== #}
+{#  JavaScript: ロジック修正  #}
+{# ================================================== #}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ★ユーザーの権限をテンプレート変数から取得
+        const currentUserRole = "{{ user.role.code|default:'' }}"; 
+
+        const taskModal = document.getElementById('taskDetailModal');
+        
+        taskModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            
+            // データ取得
+            const taskId = button.getAttribute('data-id');
+            const title = button.getAttribute('data-title');
+            const due = button.getAttribute('data-due');
+            const assignees = button.getAttribute('data-assignees');
+            const tags = button.getAttribute('data-tags');
+            const notes = button.getAttribute('data-notes');
+            const created = button.getAttribute('data-created');
+            
+            const status = button.getAttribute('data-status');
+            const isAssignee = button.getAttribute('data-is-assignee') === 'true';
+            const isCompletedByMe = button.getAttribute('data-is-completed-by-me') === 'true';
+
+            // 表示更新
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalDue').textContent = due || '未設定';
+            document.getElementById('modalAssignees').textContent = assignees || '未割り当て';
+            document.getElementById('modalTags').textContent = tags || '-';
+            document.getElementById('modalCreated').textContent = created;
+            document.getElementById('modalNotes').textContent = notes || '（備考なし）';
+
+            // --- ボタン要素の取得 ---
+            const btnStart = document.getElementById('btnStartTask');
+            const btnComplete = document.getElementById('btnCompleteTask');
+            const btnWaiting = document.getElementById('btnWaitingOthers');
+            const btnApprove = document.getElementById('btnApproveTask'); // 追加
+            
+            // --- ボタンのリセットと非表示 ---
+            const resetBtn = (btn) => {
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                newBtn.style.display = 'none';
+                return newBtn;
+            };
+            
+            const cleanStartBtn = resetBtn(btnStart);
+            const cleanCompleteBtn = resetBtn(btnComplete);
+            const cleanWaitingBtn = resetBtn(btnWaiting); // Waitingもリセット対象に
+            const cleanApproveBtn = resetBtn(btnApprove); // 追加
+
+            // --- ★修正ロジック: ボタンの出し分け ---
+            
+            // 1. 未着手 (Unstarted)
+            if (status === 'unstarted') {
+                cleanStartBtn.style.display = 'inline-block';
+                cleanStartBtn.innerHTML = '<i class="fas fa-hand-paper me-2"></i>このタスクに着手する';
+                cleanStartBtn.onclick = function(e) {
+                    e.preventDefault();
+                    window.location.href = `/task/${taskId}/assign/`;
+                };
+
+            // 2. 着手中 (In Progress)
+            } else if (status === 'in_progress') {
+                if (isAssignee) {
+                    // 自分が担当者の場合
+                    if (!isCompletedByMe) {
+                        // まだ完了していない -> 完了ボタン
+                        cleanCompleteBtn.style.display = 'inline-block';
+                        cleanCompleteBtn.onclick = function(e) {
+                            e.preventDefault();
+                            window.location.href = `/task/${taskId}/complete/`;
+                        };
+                    } else {
+                        // 完了済み -> 待ち表示
+                        cleanWaitingBtn.style.display = 'inline-block';
+                    }
+                } else {
+                    // ★追加: 自分が担当者ではない場合 -> 「参加する」ボタンを表示
+                    // 既存の assign URL を使えば、backendで add してくれるのでそのまま使用可能
+                    cleanStartBtn.style.display = 'inline-block';
+                    cleanStartBtn.innerHTML = '<i class="fas fa-users me-2"></i>このタスクに参加する'; // 文言変更
+                    cleanStartBtn.className = 'btn btn-info text-white action-btn'; // 色変更(任意)
+                    cleanStartBtn.onclick = function(e) {
+                        e.preventDefault();
+                        window.location.href = `/task/${taskId}/assign/`;
+                    };
+                }
+
+            // 3. 確認待ち (Pending Review)
+            } else if (status === 'pending_review') {
+                // ★追加: マネージャーまたは管理者の場合 -> 承認ボタン
+                if (currentUserRole === 'manager' || currentUserRole === 'admin') {
+                    cleanApproveBtn.style.display = 'inline-block';
+                    cleanApproveBtn.onclick = function(e) {
+                        e.preventDefault();
+                        // 新しく作った承認用URLへ
+                        window.location.href = `/task/${taskId}/approve/`;
+                    };
+                } else {
+                    // 一般社員の場合は、特にボタンなし（または「承認待ち」バッジなどを出しても良い）
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}アカウント作成結果{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-container {
+        max-width: 800px;
+        margin: 2rem auto;
+    }
+    /* テーブルヘッダーのスタイル */
+    .table thead th {
+        background-color: #e3f2fd; /* 画像に合わせた薄い青色 */
+        border-color: #bbdefb;
+        text-align: center;
+        font-weight: 600;
+    }
+    /* 所属表示欄のラベルのスタイル */
+    .department-label {
+        background-color: #e3f2fd;
+        border-color: #bbdefb;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container">
+    <div class="result-container">
+        
+        {# Djangoビューから渡された人数を表示します #}
+        <div class="alert alert-info text-center fs-5" role="alert">
+          {{ count }}人のIDが生成されました
+        </div>
+
+        {# Djangoビューから渡された所属名を表示します #}
+        <div class="input-group mb-4">
+            <span class="input-group-text department-label">所属</span>
+            <input type="text" class="form-control fs-5" value="{{ department }}" readonly>
+        </div>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>社員ID</th>
+                    <th>パスワード</th>
+                </tr>
+            </thead>
+            <tbody>
+                {# Djangoビューから渡されたアカウント情報のリスト(accounts)をループで表示します #}
+                {% for account in accounts %}
+                <tr>
+                    <td>{{ account.id }}</td>
+                    <td>{{ account.password }}</td>
+                </tr>
+                {% empty %}
+                {# accountsが空の場合の表示（サンプル） #}
+                <tr>
+                    <td colspan="2" class="text-center">アカウント情報がありません。</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="d-flex justify-content-end mt-4">
+             {# PDF保存ボタン（機能実装時に有効化） #}
+            <button type="button" class="btn btn-success me-2" disabled>PDFとして保存</button>
+            {# 入力画面に戻るためのリンクです。URLを {% url %} タグで指定してください #}
+            <a href="{% url 'top_page' %}" class="btn btn-secondary">戻る</a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% if messages %}
+    {# --- CSS: 通知専用のスタイル --- #}
+    <style>
+        .toast-container {
+            position: fixed;
+            top: 80px;      /* ヘッダーの高さ分空ける */
+            right: 20px;    /* 右寄せ */
+            z-index: 9999;  /* 最前面に表示 */
+            min-width: 300px;
+            max-width: 90%;
+        }
+        
+        .custom-alert {
+            background-color: #fff;
+            border-radius: 0.5rem;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-bottom: 1rem;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            opacity: 0;
+            /* 登場して、5秒後に消えるアニメーション */
+            animation: slideInRight 0.5s forwards, fadeOut 0.5s 5s forwards;
+        }
+
+        /* メッセージの種類による色の違い（アイコン用） */
+        .text-success { color: #198754; }
+        .text-danger  { color: #dc3545; }
+        .text-info    { color: #0dcaf0; }
+        .text-warning { color: #ffc107; }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; visibility: hidden; }
+        }
+    </style>
+
+    {# --- HTML: メッセージ表示エリア --- #}
+    <div class="toast-container">
+        {% for message in messages %}
+            <div class="alert custom-alert" role="alert">
+                {# アイコンの出し分け #}
+                {% if message.tags == 'success' %}
+                    <i class="fas fa-check-circle fs-4 me-3 text-success"></i>
+                {% elif message.tags == 'error' %}
+                    <i class="fas fa-times-circle fs-4 me-3 text-danger"></i>
+                {% elif message.tags == 'warning' %}
+                    <i class="fas fa-exclamation-circle fs-4 me-3 text-warning"></i>
+                {% else %}
+                    <i class="fas fa-info-circle fs-4 me-3 text-info"></i>
+                {% endif %}
+                
+                <div>{{ message }}</div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {# --- JS: アニメーション終了後の要素削除 --- #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.custom-alert');
+            alerts.forEach(alert => {
+                alert.addEventListener('animationend', (event) => {
+                    if (event.animationName === 'fadeOut') {
+                        alert.remove();
+                    }
+                });
+            });
+        });
+    </script>
+{% endif %}

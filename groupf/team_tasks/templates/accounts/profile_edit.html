@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}プロフィール設定{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        {% if user.last_login == user.date_joined %}
+                            プロフィール登録
+                        {% else %}
+                            プロフィール編集
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    
+                    {% if user.last_login == user.date_joined %}
+                        <div class="alert alert-success mb-4">
+                            <i class="fas fa-check-circle me-2"></i><strong>パスワードの設定が完了しました。</strong><br>
+                            続けて、詳細なプロフィール情報を入力してください。
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-4">
+                            登録情報を変更する場合は、内容を修正して「変更を保存する」ボタンを押してください。
+                        </p>
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                {{ field.label }}
+                            </label>
+                            
+                            {{ field }}
+                            
+                            {% if field.help_text %}
+                                <div class="form-text text-muted small">{{ field.help_text }}</div>
+                            {% endif %}
+                            
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>{{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+
+                        <hr class="my-4">
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                {% if user.last_login == user.date_joined %}
+                                    登録してスタート
+                                {% else %}
+                                    変更を保存する
+                                {% endif %}
+                            </button>
+                            
+                            {% if user.last_login != user.date_joined %}
+                            <a href="{% url 'top_page' %}" class="btn btn-outline-secondary">
+                                キャンセルして戻る
+                            </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 全てのinput, select, textareaにBootstrapのクラスを適用
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+            if (el.type !== 'checkbox' && el.type !== 'radio' && el.type !== 'file') {
+                el.classList.add('form-control');
+            } else if (el.type === 'file') {
+                el.classList.add('form-control');
+            } else if (el.type === 'checkbox') {
+                el.classList.add('form-check-input');
+            }
+        });
+    });
+</script>
+{% endblock %}

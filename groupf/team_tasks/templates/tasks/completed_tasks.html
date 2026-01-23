@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* 全体のコンテナ */
+    .list-page-container {
+        padding: 40px;
+        background-color: #fff;
+        min-height: 100vh;
+    }
+
+    /* 画面中央のタイトル */
+    .page-title {
+        text-align: center;
+        font-size: 18px;
+        margin-bottom: 40px;
+        font-weight: normal;
+    }
+
+    /* タスクを並べるグリッド（2列） */
+    .task-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* 2列に分割 */
+        gap: 30px 60px; /* 縦と横の隙間 */
+        max-width: 1000px; /* 全体の幅を制限 */
+        margin: 0 auto; /* 中央寄せ */
+    }
+
+    /* 個別のタスクカード */
+    .task-card {
+        border: 1px solid #000; /* 黒い枠線 */
+        padding: 10px 15px;
+        background-color: #fff;
+        min-height: 100px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    /* タスク名の行 */
+    .task-name {
+        font-size: 18px;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    /* 担当者・完了日時の行 */
+    .task-info-row {
+        display: flex;
+        font-size: 16px;
+        margin-bottom: 2px;
+    }
+
+    .info-label {
+        width: 80px; /* 「担当者」「完了日時」のラベル幅を固定して揃える */
+    }
+
+    .info-value {
+        flex: 1;
+    }
+
+    /* レスポンシブ対応：画面が狭いときは1列にする */
+    @media (max-width: 768px) {
+        .task-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="list-page-container">
+    <h2 class="page-title">完了タスク一覧画面</h2>
+
+    <div class="task-grid">
+        {% for task in completed_tasks %}
+        <div class="task-card">
+            <!-- タスク名 -->
+            <div class="task-name">{{ task.title }}</div>
+            
+            <!-- 担当者 -->
+            <div class="task-info-row">
+                <span class="info-label">担当者</span>
+                <span class="info-value">{{ task.assignee }}</span>
+            </div>
+
+            <!-- 完了日時 -->
+            <div class="task-info-row">
+                <span class="info-label">完了日時</span>
+                <span class="info-value">{{ task.completed_at|date:"Y/m/d H:i" }}</span>
+            </div>
+        </div>
+        {% empty %}
+        <p style="text-align: center; grid-column: 1 / 3;">完了したタスクはありません。</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

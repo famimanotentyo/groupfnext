@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>タスク管理</title>
+    <style>
+        /* --- 全体的なスタイル --- */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Meiryo', 'メイリオ', 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', sans-serif;
+            background-color: #ffffff;
+            height: 100%;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh; /* 画面全体の高さに合わせる */
+        }
+
+        /* --- ヘッダー --- */
+        .header {
+            background-color: #a0d8ef; /* 水色 */
+            height: 60px;
+            width: 100%;
+        }
+
+        /* --- メインコンテンツエリア --- */
+        .main-wrapper {
+            display: flex;
+            flex-grow: 1; /* 残りの高さをすべて使用する */
+        }
+
+        /* --- サイドバー --- */
+        .sidebar {
+            background-color: #1a4e66; /* 紺色 */
+            width: 120px;
+            flex-shrink: 0; /* 幅を固定 */
+        }
+
+        /* --- コンテンツ表示部分 --- */
+        .content {
+            flex-grow: 1;
+            padding: 25px;
+            overflow-y: auto; /* コンテンツが多い場合にスクロール */
+        }
+
+        /* --- 画面1: タスク一覧 --- */
+        #task-list-screen h2 {
+            margin-top: 0;
+            font-weight: normal;
+        }
+
+        .task-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .task-card {
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        .task-card:hover {
+            background-color: #f5f5f5;
+            transform: translateY(-3px);
+        }
+
+        .task-card .title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+        }
+
+        .task-card .due-date {
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        /* --- 画面2: タスク詳細 --- */
+        #task-detail-screen {
+            display: none; /* 最初は非表示 */
+        }
+        
+        #task-detail-screen h2 {
+             margin-top: 0;
+             font-weight: bold;
+        }
+
+        .detail-info p {
+            font-size: 1.1em;
+            line-height: 1.8;
+        }
+        
+        .detail-info strong {
+            display: inline-block;
+            width: 80px; /* ラベルの幅を揃える */
+        }
+
+        .button-container {
+            margin-top: 40px;
+            display: flex;
+            gap: 20px; /* ボタン間のスペース */
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn:hover {
+            opacity: 0.85;
+        }
+
+        .btn-back {
+            background-color: #c8e6c9; /* 緑 */
+        }
+        .btn-reject {
+            background-color: #ffccbc; /* オレンジ */
+        }
+        .btn-transfer {
+            background-color: #e1bee7; /* 紫 */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header"></div>
+        <div class="main-wrapper">
+            <div class="sidebar"></div>
+            <div class="content">
+                <!-- 画面1: タスク一覧 -->
+                <div id="task-list-screen">
+                    <h2>MYタスク</h2>
+                    <div class="task-grid">
+                        <div class="task-card">
+                            <p class="title">A画面設計</p>
+                            <p class="due-date">2025/11/28 まで</p>
+                        </div>
+                        <div class="task-card">
+                            <p class="title">設計書</p>
+                            <p class="due-date">2025/11/28 まで</p>
+                        </div>
+                        <div class="task-card">
+                            <p class="title">ロゴ作成</p>
+                            <p class="due-date">2025/11/28 まで</p>
+                        </div>
+                        <div class="task-card">
+                            <p class="title">B画面設計</p>
+                            <p class="due-date">2025/11/28 まで</p>
+                        </div>
+                        <div class="task-card">
+                            <p class="title">DB設計</p>
+                            <p class="due-date">2025/11/28 まで</p>
+                        </div>
+                        <div class="task-card">
+                            <p class="title">デザイン</p>
+                            <p class="due-date">2025/11/28 まで</p>
+                        </div>
+                        <div class="task-card">
+                            <p class="title">C画面設計</p>
+                            <p class="due-date">2025/11/28 まで</p>
+                        </div>
+                        <div class="task-card">
+                            <p class="title">要件定義</p>
+                            <p class="due-date">2025/11/28 まで</p>
+                        </div>
+                         <div class="task-card">
+                            <p class="title">設計書</p>
+                            <p class="due-date">2025/11/28 まで</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 画面2: タスク詳細 -->
+                <div id="task-detail-screen">
+                    <h2>A画面設計</h2>
+                    <div class="detail-info">
+                        <p><strong>期限：</strong>2025/11/27</p>
+                        <p><strong>担当者：</strong>金子ケビン</p>
+                        <p><strong>詳細：</strong>ログイン画面の設計です</p>
+                        <p><strong>マニュアル：</strong>画面設計の極意</p>
+                    </div>
+                    <div class="button-container">
+                        <button id="back-button" class="btn btn-back">戻る</button>
+                        <button class="btn btn-reject">返却</button>
+                        <button class="btn btn-transfer">譲渡</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 必要な要素を取得 ---
+        const taskListScreen = document.getElementById('task-list-screen');
+        const taskDetailScreen = document.getElementById('task-detail-screen');
+        
+        const taskCards = document.querySelectorAll('.task-card');
+        const backButton = document.getElementById('back-button');
+
+        // --- タスクカードをクリックしたときの処理 ---
+        // すべてのタスクカードにイベントリスナーを設定
+        taskCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // タスク一覧画面を非表示にする
+                taskListScreen.style.display = 'none';
+                // タスク詳細画面を表示する
+                taskDetailScreen.style.display = 'block';
+            });
+        });
+
+        // --- 「戻る」ボタンをクリックしたときの処理 ---
+        backButton.addEventListener('click', () => {
+            // タスク詳細画面を非表示にする
+            taskDetailScreen.style.display = 'none';
+            // タスク一覧画面を表示する
+            taskListScreen.style.display = 'block';
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/your_style_file.css' %}">
+{% endblock %}
+
+{% block title %}マニュアル一覧{% endblock %}
+
+{% block content %}
+<style>
+    /* 1. リスト全体のコンテナ（枠線と丸み） */
+    .manual-list-container {
+        width: 100%;
+        margin-top: 20px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden; /* 角丸からはみ出さないように */
+        background-color: #fff;
+    }
+
+    /* 2. グリッド設定：ヘッダーと行で「一文字もズレない」ように共通化 */
+    .manual-list-header, .manual-list-item {
+        display: grid !important;
+        /* 名前[自由] 操作[80px] 作成者[140px] 作成日[140px] */
+        grid-template-columns: 1fr 80px 140px 140px !important;
+        gap: 10px;
+        align-items: center;
+        padding: 15px 25px; /* 左右の余白を少し広めに */
+    }
+
+    /* 3. ヘッダーのデザイン（背景色を付けて「表」らしくする） */
+    .manual-list-header {
+        background-color: #f8f9fa !important; /* 薄いグレーの背景 */
+        border-bottom: 2px solid #eee;
+        color: #0d6efd;
+        font-weight: bold;
+        font-size: 15px;
+    }
+
+    /* 4. 各列の文字の寄せ方（ここがズレ防止のキモ） */
+    .col-manual-name { text-align: left; }
+    .col-actions     { text-align: center; position: relative; } /* 操作列は中央 */
+    .col-creator     { text-align: left; padding-left: 10px; }   /* 少し左に余白 */
+    .col-created-date { text-align: left; padding-left: 10px; }
+
+    /* 5. 三点リーダーボタン（枠を消す） */
+    .action-btn {
+        all: unset !important;
+        cursor: pointer !important;
+        display: inline-block !important;
+        font-size: 18px !important;
+        color: #666;
+        transition: color 0.2s;
+    }
+    .action-btn:hover { color: #000; }
+
+    /* 6. ドロップダウンメニュー（浮かせる設定） */
+    .action-menu {
+        display: none;
+        position: absolute !important;
+        top: 100%;
+        right: 0;
+        background: white !important;
+        border: 1px solid #ddd !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        z-index: 1000;
+        min-width: 150px;
+        border-radius: 4px;
+    }
+
+    .action-menu a {
+        display: block !important;
+        padding: 10px 15px !important;
+        color: #333 !important;
+        text-decoration: none !important;
+        font-size: 14px;
+        border-bottom: 1px solid #f0f0f0;
+        text-align: left;
+    }
+
+    .action-menu a:hover { background-color: #f8f9fa; }
+
+    /* 行の区切り線 */
+    .manual-list-item {
+        border-bottom: 1px solid #f5f5f5;
+        font-size: 15px;
+    }
+    .manual-list-item:last-child { border-bottom: none; }
+</style>
+
+<section class="manual-page">
+    <div class="manual-controls">
+        <nav class="manual-tabs">
+            <ul>
+                <li><a href="?tab=all" class="{% if active_tab == 'all' %}active{% endif %}">すべて見る</a></li>
+                <li><a href="?tab=recent" class="{% if active_tab == 'recent' %}active{% endif %}">最近使ったもの</a></li>
+                <li><a href="?tab=bookmark" class="{% if active_tab == 'bookmark' %}active{% endif %}">ブックマーク</a></li>
+            </ul>
+        </nav>
+        <div class="manual-actions">
+            <a href="{% url 'manual_create_view' %}" class="btn-new-manual">新規作成</a>
+        </div>
+    </div>
+
+    <!-- 検索フォーム -->
+    <form method="GET" action="{% url 'manual_list' %}" class="search-wrapper">
+        <div class="search-bar">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" name="q" placeholder="マニュアルを検索" value="{{ request.GET.q }}">
+            <input type="hidden" name="tab" value="{{ active_tab }}">
+        </div>
+    </form>
+
+    <div class="manual-list-container">
+        <div class="manual-list-header">
+            <div class="col-manual-name">マニュアル名</div>
+            <div class="col-actions">操作</div> 
+            <div class="col-creator">作成者</div>
+            <div class="col-created-date">作成日</div>
+        </div>
+
+        <div class="manual-list-body">
+            {% for manual in manuals %}
+            <div class="manual-list-item">
+                <div class="col-manual-name">
+                    <a href="{% url 'manual_detail' manual.pk %}">{{ manual.title }}</a>
+                </div>
+                
+                <div class="col-actions">
+                    <!-- 「・・・」の部分 -->
+                    <span class="action-btn"><i class="fa-solid fa-ellipsis"></i></span>                    
+                    <!-- 隠れているメニュー部分 -->
+                    <div class="action-menu">
+                        <a href="{% url 'toggle_manual_favorite' manual.pk %}">
+                            {% if request.user in manual.bookmarks.all %}
+                                ブックマーク解除
+                            {% else %}
+                                ブックマーク登録
+                            {% endif %}
+                        </a>
+                        {% if manual.file %}
+                            <a href="{{ manual.file.url }}" download>ダウンロード</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="col-creator">{{ manual.created_by.last_name }} {{ manual.created_by.first_name }}</div>
+                <div class="col-created-date">{{ manual.created_at|date:"Y/m/d" }}</div>
+            </div>
+            {% empty %}
+            <div style="padding: 40px; text-align: center; color: #888;">
+                該当するマニュアルが見つかりませんでした。
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const actionBtns = document.querySelectorAll('.action-btn');
+    
+    actionBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation(); 
+            const menu = this.nextElementSibling;
+            
+            // 他の開いているメニューをすべて閉じる
+            document.querySelectorAll('.action-menu').forEach(m => {
+                if (m !== menu) m.style.display = 'none';
+            });
+
+            // クリックしたメニューの表示・非表示を切り替える
+            if (menu.style.display === 'block') {
+                menu.style.display = 'none';
+            } else {
+                menu.style.display = 'block';
+            }
+        });
+    });
+
+    // 画面のどこかをクリックしたらメニューを閉じる
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.action-menu').forEach(m => {
+            m.style.display = 'none';
+        });
+    });
+});
+</script>
+{% endblock %}

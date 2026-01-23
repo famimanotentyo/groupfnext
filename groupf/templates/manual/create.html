@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* コンテンツ全体の余白調整 */
+    .manual-post-container {
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* 中央に寄せる（左寄せが良い場合は削除） */
+    }
+
+    /* 「マニュアル投稿」のタイトルボックス */
+    .form-title-box{
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 40px;
+    }
+
+    /* フォーム全体の幅を制限 */
+    .styled-form {
+        width: 100%;
+        max-width: 700px;
+    }
+
+    /* Djangoの form.as_p で作られる各項目（pタグ）の調整 */
+    .styled-form p {
+        margin-bottom: 25px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* ラベル（項目名）のスタイル */
+    .styled-form label {
+        font-size: 16px;
+        margin-bottom: 8px;
+        font-weight: normal;
+    }
+
+    /* 入力欄（テキスト、テキストエリア）の共通スタイル */
+    .styled-form input[type="text"],
+    .styled-form textarea {
+        width: 100%;
+        border: 1px solid #000;
+        padding: 10px;
+        font-size: 16px;
+        box-sizing: border-box;
+        outline: none;
+    }
+
+    /* 説明・備考欄の高さを画像に合わせる */
+    .styled-form textarea {
+        height: 180px;
+        resize: none;
+    }
+
+    /* ファイル選択フィールドのスタイル */
+    .styled-form input[type="file"] {
+        width: 100%;
+        border: 1px solid #000;
+        padding: 8px;
+        background-color: #fff;
+        box-sizing: border-box;
+    }
+
+    /* 投稿ボタンのエリア */
+    .button-area {
+        margin-top: 30px;
+        display: flex;
+        justify-content: center;
+    }
+
+    /* 投稿ボタン（横幅いっぱい・白背景・黒枠） */
+    .submit-btn {
+        width: 1000px;
+        padding: 20px;
+        background-color: #fff;
+        border: 1px solid #000;
+        font-size: 18px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-weight: bold;
+    }
+
+    .submit-btn:hover {
+        background-color: #34495e;
+    }
+</style>
+
+<div class="manual-post-container">
+    <!-- タイトル部分 -->
+    <div class="form-title-box">
+        マニュアル投稿
+    </div>
+
+    <!-- フォーム部分 -->
+    <form method="post" enctype="multipart/form-data" class="styled-form">
+        {% csrf_token %}
+        
+        {# Djangoのフォーム項目を自動生成 #}
+        {{ form.as_p }}
+
+        <div class="button-area">
+            <button type="submit" class="submit-btn">投稿</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

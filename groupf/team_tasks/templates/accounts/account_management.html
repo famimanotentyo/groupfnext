@@ -1,0 +1,41 @@
+{# groupf/tasks/templates/acounts/account_management.html (縦並び・中央揃え版) #}
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-3">
+    <div class="page-header">
+        <h2 class="mb-0">アカウント管理</h2>
+    </div>
+    
+    <section>
+        <div class="row g-4">
+            
+            {# アカウント作成 カード #}
+            <div class="col-lg-6">
+                {# ★★★ クラス名を "card-menu-vertical" に変更 ★★★ #}
+                <a href="{% url 'admin_csv_import_page' %}" class="card-menu-horizontal">
+                    <i class="card-icon fas fa-user-plus"></i>
+                    <div class="card-text">
+                        <h3 class="card-title">アカウント作成</h3>
+                        <p class="card-description">新しいユーザーアカウントを作成します</p>
+                    </div>
+                </a>
+            </div>
+
+            {# アカウント閲覧 カード #}
+            <div class="col-lg-6">
+                {# ★★★ クラス名を "card-menu-vertical" に変更 ★★★ #}
+                <a href="{% url 'account_list_page' %}" class="card-menu-horizontal">
+                    <i class="card-icon fa-solid fa-magnifying-glass"></i>
+                    <div class="card-text">
+                        <h3 class="card-title">アカウント閲覧</h3>
+                        <p class="card-description">既存のユーザーアカウント情報を閲覧・編集します</p>
+                    </div>
+                </a>
+            </div>
+            
+        </div>
+    </section>
+
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* 簡単なスタイリング */
+    .profile-container { max-width: 900px; margin: 20px auto; padding: 20px; font-size: 16px; }
+    .profile-header { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 30px; }
+    .profile-item { display: flex; }
+    .profile-item dt { font-weight: bold; width: 120px; color: #555; }
+    .profile-item dd { margin-left: 10px; }
+    .memo-section { margin-top: 30px; }
+    .memo-section textarea { width: 100%; min-height: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+    .memo-section button { display: block; margin-top: 10px; margin-left: auto; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+</style>
+
+<div class="profile-container">
+    <div class="profile-header">
+        {# target_user.get_full_name は姓と名を取得。なければusernameを表示 #}
+        <h2>{{ target_user.get_full_name|default:target_user.username }}</h2>
+    </div>
+
+    <div class="profile-grid">
+        <!-- 左側の列 -->
+        <dl class="profile-item">
+            <dt>得意分野</dt>
+            <dd>: {{ profile.strengths|default:"未設定" }}</dd>
+        </dl>
+        <dl class="profile-item">
+            <dt>理想の上司像</dt>
+            <dd>: {{ profile.ideal_boss|default:"未設定" }}</dd>
+        </dl>
+        <dl class="profile-item">
+            <dt>推奨CM頻度</dt>
+            <dd>: {{ profile.communication_frequency|default:"未設定" }}</dd>
+        </dl>
+
+        <!-- 右側の列 -->
+        <dl class="profile-item">
+            <dt>年代</dt>
+            <dd>: {{ profile.age_group|default:"未設定" }}</dd>
+        </dl>
+        <dl class="profile-item">
+            <dt>性別</dt>
+            <dd>: {{ profile.gender|default:"未設定" }}</dd>
+        </dl>
+        <dl class="profile-item">
+            <dt>現在の担当業務</dt>
+            <dd>: {{ profile.current_task|default:"未設定" }}</dd>
+        </dl>
+        <dl class="profile-item">
+            <dt>苦手分野</dt>
+            <dd>: {{ profile.weaknesses|default:"未設定" }}</dd>
+        </dl>
+        <dl class="profile-item">
+            <dt>モチベーション</dt>
+            <dd>: {{ profile.motivation|default:"未設定" }}</dd>
+        </dl>
+        <dl class="profile-item">
+            <dt>成長支援</dt>
+            <dd>: {{ profile.growth_support|default:"未設定" }}</dd>
+        </dl>
+    </div>
+
+    <div class="memo-section">
+        <form method="post">
+            {% csrf_token %}
+            <label for="boss_memo" style="font-weight: bold; display: block; margin-bottom: 5px;">上司メモ</label>
+            <textarea id="boss_memo" name="boss_memo">{{ profile.boss_memo }}</textarea>
+            <button type="submit">メモを保存</button>
+        </form>
+    </div>
+
+    {# メッセージ表示用 (任意) #}
+    {% if messages %}
+        <ul class="messages" style="list-style-type: none; padding: 0; margin-top: 15px;">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %} style="color: green;">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+</div>
+{% endblock %}

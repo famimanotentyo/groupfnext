@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-3">
+    <div class="page-header">
+        <h2 class="mb-0">タスクガイド</h2>
+    </div>
+    
+    <section>
+        <div class="row g-4">
+
+            <div class="col-lg-6">
+                <a href="{% url 'consultation_list_view' %}" class="card-menu-horizontal">
+                    <i class="card-icon fa-solid fa-question"></i>
+                    <div class="card-text">
+                        <h3 class="card-title">質問</h3>
+                        <p class="card-description">よくある質問の確認や、新しい質問を聞くことができます</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-6">
+                <a href="{% url 'manual_list' %}" class="card-menu-horizontal">                    
+                    <i class="card-icon fas fa-clipboard-list"></i>
+                    <div class="card-text">
+                        <h3 class="card-title">マニュアル閲覧</h3>
+                        <p class="card-description">新しい業務マニュアルを作成、閲覧ができます</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-6">
+                <a href="{% url 'manual_delete_select_list' %}" class="card-menu-horizontal">
+                    <i class="card-icon fas fa-pen-to-square"></i>
+                    <div class="card-text">
+                        <h3 class="card-title">マニュアル削除</h3>
+                        <p class="card-description">既存のマニュアルを削除できます</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-6">
+                <a href="{% url 'manual_pending_list' %}" class="card-menu-horizontal">
+                    <i class="card-icon fas fa-thumbs-up"></i>
+                    <div class="card-text">
+                        <h3 class="card-title">マニュアル承認</h3>
+                        <p class="card-description">作成されたマニュアルを確認し承認を行えます</p>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-lg-6">
+                <a href="{% url 'completed_task_list' %}" class="card-menu-horizontal">
+                   <i class="card-icon fas fa-clipboard-check"></i>
+                    <div class="card-text">
+                        <h3 class="card-title">完了タスク一覧</h3>
+                        <p class="card-description">確認が完了したタスクを一覧で表示されます</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

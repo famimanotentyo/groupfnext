@@ -1,0 +1,39 @@
+<aside class="app-sidebar">
+    <nav>
+        <ul>
+            {# === 全員共通 === #}
+            {# === 管理者 (admin) 用メニュー === #}
+            {% if user.role.code == 'admin' %}
+            {% endif %}
+            {% if user.role.code == 'admin' or user.role.code == 'manager' %}
+                <li><a href="{% url 'top_page' %}">ホーム</a></li>
+                <li><a href="{% url 'task_board_page' %}">タスクボード</a></li>
+                <li><a href="{% url 'task_assign_page' %}">タスク管理</a></li>
+                <li><a href="{% url 'task_register_page' %}">タスク登録</a></li>
+                <li><a href="{% url 'task_guide_page' %}">タスクガイド</a></li>
+                <li><a href="{% url 'my_tasks_page' %}">Myタスク</a></li>
+
+
+                <!-- <li><a href="#">タスク割り振り</a></li> -->
+                <li><a href="{% url 'management_support_page' %}">マネジメント支援</a></li>
+                <!-- <li><a href="{% url 'interview_advice_menu_page' %}">面談</a></li> -->
+                <li><a href="{% url 'account_management_page' %}">アカウント管理</a></li>
+            {% endif %}
+
+            {# === マネージャー (manager) 以上用メニュー === #}
+            {# adminもmanagerの機能を使えるようにする場合 #}
+            {% if user.role.code == 'employee'%}
+                <h3>部下</h3>
+                <li><a href="{% url 'top_page' %}">ホーム</a></li>
+                <li><a href="{% url 'my_tasks_page' %}">Myタスク</a></li>
+                <li><a href="{% url 'task_board_page' %}">タスクボード</a></li>
+                <li><a href="{% url 'task_register_page' %}">タスク登録</a></li>
+                <li><a href="{% url 'inbox' %}">インボックス</a></li>
+                <li><a href="{% url 'manual_list' %}">マニュアル</a></li>
+                <li><a href="{% url 'initial_login_page' %}">初回ログイン</a></li>
+                <li><a href="{% url 'completed_task_list' %} ">完了タスク一覧</a></li>
+            {% endif %}    
+
+        </ul>
+    </nav>
+</aside>
