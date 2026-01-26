@@ -55,10 +55,24 @@ def top_page(request):
 
     # --- マネージャー または 管理者 ---
     if role_code == 'manager' or role_code == 'admin':
+        from accounts.models import Department
+        
+        # 部署リストを取得（admin用）
+        all_departments = Department.objects.all() if role_code == 'admin' else None
+        selected_department_id = request.GET.get('department')
+        selected_department = None
         
         # メンバー取得ロジック
         if role_code == 'admin':
-            members = User.objects.filter(is_active=True).exclude(id=request.user.id)
+            # adminの場合、部署が選択されていればフィルタ、なければ全員
+            if selected_department_id:
+                try:
+                    selected_department = Department.objects.get(id=selected_department_id)
+                    members = User.objects.filter(is_active=True, department=selected_department).exclude(id=request.user.id)
+                except Department.DoesNotExist:
+                    members = User.objects.filter(is_active=True).exclude(id=request.user.id)
+            else:
+                members = User.objects.filter(is_active=True).exclude(id=request.user.id)
         else:
             if request.user.department:
                 members = User.objects.filter(
@@ -116,7 +130,9 @@ def top_page(request):
 
         context = {
             'page_title': 'チームダッシュボード',
-            'members_json': json.dumps(dashboard_data, ensure_ascii=False)
+            'members_json': json.dumps(dashboard_data, ensure_ascii=False),
+            'all_departments': all_departments,
+            'selected_department': selected_department,
         }
         return render(request, 'index.html', context)
     
@@ -353,14 +369,6 @@ def task_register_page(request):
         form = TaskRegisterForm(request.POST)
         if form.is_valid():
             task = form.save(commit=False)
-            
-            try:
-                unstarted_status = TaskStatusMaster.objects.get(code='unstarted')
-                task.status = unstarted_status
-            except TaskStatusMaster.DoesNotExist:
-                messages.error(request, 'システムエラー: タスク状態マスタ(unstarted)が見つかりません。')
-                return redirect('task_register_page')
-
             task.requested_by = request.user
             
             try:
@@ -383,6 +391,18 @@ def task_register_page(request):
                 task.task_type = type_obj
             except TaskTypeMaster.DoesNotExist:
                 pass
+
+            # ★ステータス設定: 自作タスクは「着手中」、ボードタスクは「未着手」
+            try:
+                if target_type_code == 'self':
+                    in_progress_status = TaskStatusMaster.objects.get(code='in_progress')
+                    task.status = in_progress_status
+                else:
+                    unstarted_status = TaskStatusMaster.objects.get(code='unstarted')
+                    task.status = unstarted_status
+            except TaskStatusMaster.DoesNotExist:
+                messages.error(request, 'システムエラー: タスク状態マスタが見つかりません。')
+                return redirect('task_register_page')
 
             task.save()
 
@@ -623,19 +643,24 @@ def my_tasks_page(request):
     # Fetch tasks assigned to current user, excluding completed
     tasks = Task.objects.filter(assigned_users=user).exclude(status__code='completed').select_related('status', 'requested_by', 'requested_by__department').prefetch_related('tags').order_by('due_date')
     
-    # Structure for template
+    # Structure for template - 未着手を削除
     tasks_to_display = {
-        '未着手': [],
         '進行中': [],
         '確認待ち・その他': []
     }
     
     import json
     for task in tasks:
+        # タスクタイプ判定（self = 自作タスク）
+        task_type_code = task.task_type.code if task.task_type else 'self'
+        is_self_task = (task_type_code == 'self')
+        
         # JSON Data for Modal
         task_data = {
             'id': task.id,
             'title': task.title,
+            'task_type': task_type_code,  # 追加: タスクタイプ
+            'is_self_task': is_self_task,  # 追加: 自作タスクかどうか
             'detail': {
                 'due_date': task.due_date.strftime('%Y-%m-%d %H:%M') if task.due_date else '未設定',
                 'assignee': f"{user.last_name} {user.first_name}",
@@ -649,10 +674,8 @@ def my_tasks_page(request):
         task.due_date_full = task.due_date.strftime('%Y/%m/%d %H:%M') if task.due_date else '未設定'
         task.department = task.requested_by.department.name if (task.requested_by and task.requested_by.department) else '-'
 
-        # Grouping
-        if task.status.code == 'unstarted':
-            tasks_to_display['未着手'].append(task)
-        elif task.status.code == 'in_progress':
+        # Grouping - 未着手を削除、in_progressとそれ以外のみ
+        if task.status.code == 'in_progress' or task.status.code == 'unstarted':
             tasks_to_display['進行中'].append(task)
         else:
             tasks_to_display['確認待ち・その他'].append(task)
@@ -724,7 +747,54 @@ def completed_task_list_view(request):
 
 @login_required
 def task_return_page(request, task_id):
-    # Logic for returning task
+    """
+    タスクを返却する
+    - 担当者が自分だけ → タスクボードに戻す（未着手に）
+    - 担当者が複数 → 自分を担当から外すのみ
+    """
+    task = get_object_or_404(Task, id=task_id)
+    
+    # 自分が担当者か確認
+    if request.user not in task.assigned_users.all():
+        messages.error(request, 'このタスクの担当者ではありません。')
+        return redirect('my_tasks_page')
+    
+    assigned_count = task.assigned_users.count()
+    
+    if assigned_count == 1:
+        # 自分だけが担当者 → タスクボードに戻す
+        task.assigned_users.remove(request.user)
+        
+        try:
+            unstarted_status = TaskStatusMaster.objects.get(code='unstarted')
+            task.status = unstarted_status
+        except TaskStatusMaster.DoesNotExist:
+            pass
+        
+        task.save()
+        
+        # ★通知: タスク投稿者に返却を通知
+        if task.requested_by and task.requested_by != request.user:
+            try:
+                type_info = NotificationTypeMaster.objects.get(code='info')
+                Notification.objects.create(
+                    recipient=task.requested_by,
+                    title="タスクがタスクボードに返却されました",
+                    message=f"「{task.title}」が{request.user.last_name}さんからタスクボードに返却されました。",
+                    notification_type=type_info,
+                    related_object_id=task.id,
+                    link_url='/task-board/'
+                )
+            except Exception as e:
+                print(f"通知作成エラー: {e}")
+        
+        messages.success(request, f'タスク「{task.title}」をタスクボードに返却しました。')
+    else:
+        # 複数名が担当 → 自分だけ外れる
+        task.assigned_users.remove(request.user)
+        task.save()
+        messages.success(request, f'タスク「{task.title}」の担当から外れました。')
+    
     return redirect('my_tasks_page')
 
 @login_required
@@ -750,6 +820,20 @@ def task_transfer_page(request, task_id):
                 task.notes = (task.notes or "") + log_note
                 task.save()
                 
+                # ★通知: 譲渡先のユーザーに通知
+                try:
+                    type_info = NotificationTypeMaster.objects.get(code='info')
+                    Notification.objects.create(
+                        recipient=new_owner,
+                        title="タスクが譲渡されました",
+                        message=f"「{task.title}」が{request.user.last_name}さんからあなたに譲渡されました。",
+                        notification_type=type_info,
+                        related_object_id=task.id,
+                        link_url='/my-tasks/'
+                    )
+                except Exception as e:
+                    print(f"通知作成エラー: {e}")
+                
                 messages.success(request, f'タスク「{task.title}」を{new_owner.last_name}さんに譲渡しました。')
                 return redirect('my_tasks_page')
             except User.DoesNotExist:
@@ -768,3 +852,6 @@ def task_transfer_page(request, task_id):
 @login_required
 def manager_dashboard_view(request):
     return render(request, 'tasks/manager_dashboard.html')
+
+def surprise_page(request):
+    return render(request, 'tasks/surprise.html')

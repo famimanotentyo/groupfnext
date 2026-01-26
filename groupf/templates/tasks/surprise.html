@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>...</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'MS Gothic', 'ヒラギノ角ゴ', monospace;
+            overflow: hidden;
+            cursor: none;
+        }
+        
+        #loading {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            z-index: 100;
+        }
+        
+        #loading-text {
+            font-size: 14px;
+            color: #666;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        #main-content {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+        }
+        
+        #scary-image {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            z-index: 1000;
+        }
+        
+        #scary-face {
+            font-size: 300px;
+            animation: shake 0.1s infinite, flash 0.15s infinite;
+            text-shadow: 0 0 50px #f00, 0 0 100px #f00;
+        }
+        
+        @keyframes shake {
+            0% { transform: translate(-5px, -5px); }
+            25% { transform: translate(5px, -5px); }
+            50% { transform: translate(5px, 5px); }
+            75% { transform: translate(-5px, 5px); }
+            100% { transform: translate(-5px, -5px); }
+        }
+        
+        @keyframes flash {
+            0% { opacity: 1; background: #000; }
+            50% { opacity: 0.9; background: #200; }
+            100% { opacity: 1; background: #000; }
+        }
+        
+        #calm-scene {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+        
+        .calm-text {
+            font-size: 18px;
+            color: #8888aa;
+            text-align: center;
+            line-height: 2;
+            opacity: 0;
+            animation: fadeIn 3s forwards;
+        }
+        
+        .calm-text small {
+            display: block;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #555;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .stars {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+                              radial-gradient(2px 2px at 40px 70px, #fff, transparent),
+                              radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+                              radial-gradient(2px 2px at 160px 120px, #ddd, transparent);
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            animation: twinkle 5s infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        #exit-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #888;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 2000;
+            display: none;
+        }
+        
+        #exit-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div id="loading-text">読み込み中...</div>
+    </div>
+    
+    <div id="main-content">
+        <div id="calm-scene">
+            <div class="stars"></div>
+            <div class="calm-text">
+                深呼吸をしてください...<br><br>
+                画面をじっと見つめて...<br><br>
+                心を落ち着けて...
+            </div>
+        </div>
+    </div>
+    
+    <div id="scary-image">
+        <div id="scary-face">👹</div>
+    </div>
+    
+    <a id="exit-btn" href="/">ダッシュボードに戻る</a>
+    
+    <script>
+        // 音声生成（ブラウザのWeb Audio API使用）
+        function playScream() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.5);
+            
+            gainNode.gain.setValueAtTime(0.8, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 1);
+        }
+        
+        // メインシーケンス
+        setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+        }, 2000);
+        
+        setTimeout(() => {
+            document.getElementById('main-content').style.display = 'none';
+            document.getElementById('scary-image').style.display = 'flex';
+            playScream();
+            
+            // 画面を激しく点滅
+            document.body.style.background = '#f00';
+            setTimeout(() => { document.body.style.background = '#000'; }, 100);
+            setTimeout(() => { document.body.style.background = '#fff'; }, 200);
+            setTimeout(() => { document.body.style.background = '#000'; }, 300);
+        }, 7000);
+        
+        setTimeout(() => {
+            document.getElementById('scary-image').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('exit-btn').style.display = 'block';
+            document.body.style.cursor = 'auto';
+            
+            document.querySelector('.calm-text').innerHTML = `
+                お疲れ様でした。<br><br>
+                これは昔懐かしいホラーフラッシュです。<br><br>
+                心臓は大丈夫ですか？😈<br><br>
+                <small>※隠しリンクを見つけたあなたはすごい！</small>
+            `;
+        }, 9000);
+    </script>
+</body>
+</html>

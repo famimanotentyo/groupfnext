@@ -1,4 +1,6 @@
 from django import forms
+from django.utils import timezone
+
 from .models import Task
 
 class CSVUploadForm(forms.Form):
@@ -39,4 +41,9 @@ class TaskRegisterForm(forms.ModelForm):
         due_date = self.cleaned_data.get('due_date')
         if not due_date:
             raise forms.ValidationError("期限は必須です。")
+        
+        # 過去の日時チェック
+        if due_date <= timezone.now():
+            raise forms.ValidationError("期限は現在より後の日時を設定してください。")
+            
         return due_date

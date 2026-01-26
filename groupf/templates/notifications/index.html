@@ -1,39 +1,276 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}通知一覧{% endblock %}
 
-{% block content %}
-<div class="container py-4" style="max-width: 800px;">
-    <h2 class="h3 mb-4">通知一覧</h2>
+{% block extra_css %}
+<style>
+    /* 通知ページ専用スタイル */
+    .notification-container {
+        display: flex;
+        height: calc(100vh - 140px); /* ヘッダーとパディング分を調整 */
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
 
-    <div class="list-group shadow-sm">
-        {% for notification in notifications %}
-        <a href="{{ notification.link_url|default:'#' }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-start {% if not notification.is_read %}bg-light border-start border-5 border-primary{% endif %}">
-            <div class="ms-2 me-auto">
-                <div class="fw-bold d-flex align-items-center">
-                    {% if notification.notification_type.code == 'interview_invite' %}
-                    <span class="badge bg-info text-dark me-2">面談</span>
-                    {% elif notification.notification_type.code == 'info' %}
-                    <span class="badge bg-secondary me-2">お知らせ</span>
-                    {% else %}
-                    <span class="badge bg-light text-dark border me-2">{{ notification.notification_type.name }}</span>
-                    {% endif %}
-                    {{ notification.title }}
+    /* 左側: リストペイン */
+    .notification-list-pane {
+        width: 320px;
+        flex-shrink: 0;
+        border-right: 1px solid #e0e0e0;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+    }
+
+    .list-header {
+        padding: 15px;
+        border-bottom: 1px solid #e0e0e0;
+        background-color: #fff;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        font-weight: bold;
+    }
+
+    .notification-item {
+        display: block;
+        padding: 15px;
+        border-bottom: 1px solid #f0f0f0;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        text-decoration: none;
+        color: inherit;
+        position: relative;
+    }
+
+    .notification-item:hover {
+        background-color: #f0f0f0;
+    }
+
+    .notification-item.active {
+        background-color: #e6f0ff; /* 選択中の色 */
+    }
+
+    .notification-item.unread::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background-color: #0d6efd;
+    }
+
+    .notif-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 4px;
+    }
+
+    .notif-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+        line-height: 1.4;
+    }
+
+    .notif-preview {
+        font-size: 0.85rem;
+        color: #666;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* 右側: 詳細ペイン */
+    .notification-detail-pane {
+        flex-grow: 1;
+        padding: 30px;
+        overflow-y: auto;
+        background-color: #fff;
+    }
+
+    .detail-header-area {
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .detail-title {
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .detail-meta {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 20px;
+    }
+
+    .detail-content {
+        line-height: 1.6;
+        white-space: pre-wrap;
+        color: #333;
+        font-size: 1rem;
+    }
+
+    .detail-actions {
+        margin-top: 40px;
+    }
+    
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #adb5bd;
+    }
+    
+    .icon-box {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        color: white;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    .icon-interview { background-color: #0dcaf0; }
+    .icon-info { background-color: #6c757d; }
+    .icon-default { background-color: #0d6efd; }
+
+    .item-flex {
+        display: flex;
+        align-items: flex-start;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="notification-container shadow-sm">
+        
+        <!-- 左リスト -->
+        <div class="notification-list-pane">
+            <div class="list-header">
+                通知一覧
+            </div>
+            
+            <div id="notificationList">
+                {% for notification in notifications %}
+                <div class="notification-item {% if not notification.is_read %}unread{% endif %}"
+                     onclick="showDetail(this)"
+                     data-id="{{ notification.id }}"
+                     data-title="{{ notification.title }}"
+                     data-date="{{ notification.created_at|date:'Y/m/d H:i' }}"
+                     data-type="{{ notification.notification_type.code }}"
+                     data-typename="{{ notification.notification_type.name }}"
+                     data-message="{{ notification.message }}"
+                     data-link="{{ notification.link_url|default:'' }}">
+                    
+                    <div class="item-flex">
+                        <div class="icon-box {% if notification.notification_type.code == 'interview_invite' %}icon-interview{% elif notification.notification_type.code == 'info' %}icon-info{% else %}icon-default{% endif %}">
+                            <i class="fas {% if notification.notification_type.code == 'interview_invite' %}fa-user-friends{% elif notification.notification_type.code == 'info' %}fa-info{% else %}fa-bell{% endif %}"></i>
+                        </div>
+                        <div style="flex-grow: 1; min-width: 0;">
+                            <div class="notif-meta">
+                                <span>{{ notification.notification_type.name }}</span>
+                                <span>{{ notification.created_at|date:'m/d' }}</span>
+                            </div>
+                            <div class="notif-title">{{ notification.title }}</div>
+                            <div class="notif-preview">{{ notification.message }}</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="small mt-1 text-muted" style="white-space: pre-wrap;">{{ notification.message|truncatechars:100 }}</div>
-                <div class="text-muted extra-small mt-2" style="font-size: 0.85em;">
-                    {{ notification.created_at|date:"Y/m/d H:i" }}
+                {% empty %}
+                <div class="p-4 text-center text-muted">
+                    通知はありません
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 右詳細 -->
+        <div class="notification-detail-pane">
+            <div id="emptyState" class="empty-state">
+                <i class="far fa-bell fa-4x mb-3"></i>
+                <p>左側のリストから通知を選択してください</p>
+            </div>
+
+            <div id="detailContent" style="display: none;">
+                <div class="detail-header-area">
+                    <div>
+                        <span class="badge bg-secondary mb-2" id="detailTypeName">タイプ</span>
+                        <div class="text-muted" id="detailDate">日付</div>
+                    </div>
+                    <!-- 右上のアクションがあればここに -->
+                </div>
+
+                <h2 class="detail-title" id="detailTitle">タイトル</h2>
+
+                <div class="detail-content" id="detailMessage">
+                    メッセージ本文
+                </div>
+
+                <div class="detail-actions">
+                    <a href="#" id="detailLinkBtn" class="btn btn-primary">
+                        <i class="fas fa-external-link-alt me-2"></i>確認する
+                    </a>
                 </div>
             </div>
-            {% if not notification.is_read %}
-            <span class="badge bg-primary rounded-pill">新着</span>
-            {% endif %}
-        </a>
-        {% empty %}
-        <div class="list-group-item text-center py-5 text-muted">
-            通知はありません
         </div>
-        {% endfor %}
+
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showDetail(element) {
+        // アクティブ状態の切り替え
+        document.querySelectorAll('.notification-item').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+
+        // データ取得
+        const title = element.dataset.title;
+        const date = element.dataset.date;
+        const typeName = element.dataset.typename;
+        const message = element.dataset.message;
+        const link = element.dataset.link;
+        // const notifId = element.dataset.id; // 将来的に既読APIを叩くなら使う
+
+        // 詳細エリアへのセット
+        document.getElementById('detailTitle').innerText = title;
+        document.getElementById('detailDate').innerText = date;
+        document.getElementById('detailTypeName').innerText = typeName;
+        document.getElementById('detailMessage').innerText = message;
+
+        const linkBtn = document.getElementById('detailLinkBtn');
+        if (link) {
+            linkBtn.href = link;
+            linkBtn.style.display = 'inline-flex';
+        } else {
+            linkBtn.style.display = 'none';
+        }
+
+        // 表示切り替え
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('detailContent').style.display = 'block';
+        
+        // 未読マークを消す（見た目だけ）
+        element.classList.remove('unread');
+    }
+</script>
 {% endblock %}

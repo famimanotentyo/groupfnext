@@ -4,6 +4,8 @@ from . import views
 urlpatterns = [
     path('', views.interview_home, name='interview_home'),
     path('create/', views.interview_create, name='interview_create'),
+    path('history/', views.interview_history_select, name='interview_history_select'),
+    path('follow-up/', views.follow_up_report, name='follow_up_report'),
     path('detail/<int:pk>/', views.interview_detail, name='interview_detail'),
     path('feedback/<int:pk>/', views.interview_feedback, name='interview_feedback'),
     path('confirm/<int:pk>/', views.interview_confirm, name='interview_confirm'),

@@ -44,11 +44,19 @@
 
                 <div class="mb-4">
                     <label class="form-label fw-bold">4. 日時（予定）</label>
-                    <input type="datetime-local" name="scheduled_at" class="form-control" style="max-width: 300px;">
+                    <div class="input-group" id="scheduledAtGroup">
+                        <input type="text" name="scheduled_at" id="scheduledAtInput" class="form-control border-end-0" placeholder="日付や時刻を選択..." required>
+                        <span class="input-group-text bg-white border-start-0 text-muted" id="calendarIcon" style="cursor: pointer;">
+                            <i class="far fa-calendar-alt"></i>
+                        </span>
+                    </div>
+                    <div id="dateError" class="text-danger small mt-1 fw-bold" style="display: none;">
+                        過去の日時は選択できません。現在より後の日時を選択してください。
+                    </div>
                 </div>
 
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary btn-lg">
+                    <button type="submit" id="submitBtn" class="btn btn-primary btn-lg">
                         <i class="fas fa-magic"></i> AIシナリオを生成する
                     </button>
                     <small class="text-center text-muted mt-2">※生成には10秒ほどかかる場合があります</small>
@@ -62,5 +70,95 @@
 function setTheme(text) {
     document.getElementById('themeInput').value = text;
 }
+
+// 初期化
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('scheduledAtInput');
+    const calendarIcon = document.getElementById('calendarIcon');
+    const errorDiv = document.getElementById('dateError');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // 日時の最小値を現在時刻に設定
+    function setMinDateTime() {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const minDateTime = now.toISOString().slice(0, 16);
+        dateInput.min = minDateTime;
+    }
+
+    // 日付変更時のバリデーション
+    function validateDateTime() {
+        const selectedDate = new Date(dateInput.value);
+        const now = new Date();
+        
+        if (dateInput.value && selectedDate <= now) {
+            dateInput.classList.add('is-invalid');
+            errorDiv.style.display = 'block';
+            submitBtn.disabled = true;
+            return false;
+        } else {
+            dateInput.classList.remove('is-invalid');
+            errorDiv.style.display = 'none';
+            submitBtn.disabled = false;
+            return true;
+        }
+    }
+
+    // フォーカス時の制御
+    dateInput.addEventListener('focus', function() {
+        this.type = 'datetime-local';
+        setMinDateTime();
+        
+        // 値がまだない場合、初期時間を23:59に設定
+        if (!this.value) {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(23, 59, 0, 0);
+            tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset() + 59);
+            const defaultValue = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000).toISOString().slice(0, 16).replace(/T\d{2}:\d{2}/, 'T23:59');
+            // 翌日の23:59をセット
+            const now = new Date();
+            now.setDate(now.getDate() + 1);
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            this.value = `${year}-${month}-${day}T23:59`;
+        }
+        
+        if ('showPicker' in HTMLInputElement.prototype) {
+            try { this.showPicker(); } catch(e) {}
+        }
+    });
+
+    // フォーカスが外れた時の制御
+    dateInput.addEventListener('blur', function() {
+        if (!this.value) {
+            this.type = 'text';
+            this.placeholder = '日付や時刻を選択...';
+        }
+        validateDateTime();
+    });
+
+    // 値変更時のバリデーション
+    dateInput.addEventListener('change', validateDateTime);
+    dateInput.addEventListener('input', validateDateTime);
+
+    // アイコンクリック時の制御
+    if (calendarIcon) {
+        calendarIcon.addEventListener('click', function() {
+            dateInput.type = 'datetime-local';
+            setMinDateTime();
+            dateInput.focus();
+            
+            if ('showPicker' in HTMLInputElement.prototype) {
+                try {
+                    dateInput.showPicker();
+                } catch (error) {
+                    console.log('Picker open failed', error);
+                }
+            }
+        });
+    }
+});
 </script>
 {% endblock %}

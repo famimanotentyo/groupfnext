@@ -99,8 +99,14 @@
 
                             <div class="mb-4">
                                 <label for="assignDueDate" class="form-label fw-bold">期限:</label>
-                                <div class="input-group">
-                                    <input type="datetime-local" class="form-control" id="assignDueDate">
+                                <div class="input-group" id="assignDueDateGroup">
+                                    <input type="text" class="form-control border-end-0" id="assignDueDate" placeholder="日付や時刻を選択..." required>
+                                    <span class="input-group-text bg-white border-start-0 text-muted" id="assignCalendarIcon" style="cursor: pointer;">
+                                        <i class="far fa-calendar-alt"></i>
+                                    </span>
+                                </div>
+                                <div id="dateError" class="text-danger small mt-1 fw-bold" style="display: none;">
+                                    過去の日時は選択できません。現在より後の日時を選択してください。
                                 </div>
                             </div>
                         </div>
@@ -176,6 +182,85 @@
 document.addEventListener('DOMContentLoaded', function() {
     let selectedTaskId = null;
     let selectedUserId = null;
+
+    // ==========================================
+    // 0. 日時バリデーション
+    // ==========================================
+    const dueDateInput = document.getElementById('assignDueDate');
+    const calendarIcon = document.getElementById('assignCalendarIcon');
+    const errorDiv = document.getElementById('dateError');
+
+    function setMinDateTime() {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const minDateTime = now.toISOString().slice(0, 16);
+        dueDateInput.min = minDateTime;
+    }
+
+    function validateDateTime() {
+        const selectedDate = new Date(dueDateInput.value);
+        const now = new Date();
+        
+        if (dueDateInput.value && selectedDate <= now) {
+            dueDateInput.classList.add('is-invalid');
+            errorDiv.style.display = 'block';
+            return false;
+        } else {
+            dueDateInput.classList.remove('is-invalid');
+            errorDiv.style.display = 'none';
+            return true;
+        }
+    }
+
+    // フォーカス時の制御
+    dueDateInput.addEventListener('focus', function() {
+        this.type = 'datetime-local';
+        setMinDateTime();
+        
+        // 値がまだない場合、初期時間を23:59に設定
+        if (!this.value) {
+            const now = new Date();
+            now.setDate(now.getDate() + 1);
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            this.value = `${year}-${month}-${day}T23:59`;
+        }
+        
+        if ('showPicker' in HTMLInputElement.prototype) {
+            try { this.showPicker(); } catch(e) {}
+        }
+    });
+
+    // フォーカスが外れた時の制御
+    dueDateInput.addEventListener('blur', function() {
+        if (!this.value) {
+            this.type = 'text';
+            this.placeholder = '日付や時刻を選択...';
+        }
+        validateDateTime();
+    });
+
+    // 値変更時のバリデーション
+    dueDateInput.addEventListener('change', validateDateTime);
+    dueDateInput.addEventListener('input', validateDateTime);
+
+    // アイコンクリック時の制御
+    if (calendarIcon) {
+        calendarIcon.addEventListener('click', function() {
+            dueDateInput.type = 'datetime-local';
+            setMinDateTime();
+            dueDateInput.focus();
+            
+            if ('showPicker' in HTMLInputElement.prototype) {
+                try {
+                    dueDateInput.showPicker();
+                } catch (error) {
+                    console.log('Picker open failed', error);
+                }
+            }
+        });
+    }
 
     // ==========================================
     // 1. タスク検索・選択機能

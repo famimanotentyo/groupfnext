@@ -21,7 +21,12 @@ def interview_home(request):
     - 検索機能
     - 進行中・今後の面談
     - 面談履歴
+    - 要アクション件数（準備中で期限切れ＆FB未入力）
+    - 今月の実施率
     """
+    from django.db.models import Count
+    from accounts.models import RoleMaster
+    
     # 検索機能
     search_query = request.GET.get('q', '').strip()
     search_results = []
@@ -46,17 +51,77 @@ def interview_home(request):
             
         search_results = base_query.select_related('department', 'role').distinct()
     
-    # 進行中・今後の面談（自分が担当する面談）
-    # ★修正: 部署フィルタを追加 (部下の部署が自分の部署と同じであること)
-    # 基本的には manager=request.user で絞っているが、念の為部署も確認するか、
-    # あるいは「自分が担当」していれば部署またぎもあり得るか？
-    # ユーザー要望は「表示するものを、ログインしている上司の部署の人間のみにしてください」なので
-    # ここでは厳密に department 一致を追加する。
-    
     now = timezone.now()
+    
+    # --- 要アクション件数の計算 ---
+    # 「準備中」(confirmed) ステータスで、予定日時が過ぎており、フィードバックがない面談
+    action_interviews = Interview.objects.filter(
+        manager=request.user,
+        status__code='confirmed',  # 準備中
+        scheduled_at__lt=now       # 予定日時が過去
+    ).exclude(
+        feedback__isnull=False     # フィードバックがない
+    )
+    if user_department:
+        action_interviews = action_interviews.filter(employee__department=user_department)
+    action_count = action_interviews.count()
+    action_interviews_list = action_interviews.select_related('employee')[:5]  # 表示用に最大5件
+    
+    # --- 今月の実施率の計算 ---
+    # 今月の開始日と終了日
+    first_day_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # 部署内のemployee権限のユーザー一覧
+    try:
+        employee_role = RoleMaster.objects.get(code='employee')
+        if user_department:
+            all_employees = User.objects.filter(
+                department=user_department,
+                role=employee_role,
+                is_active=True
+            ).exclude(id=request.user.id)
+        else:
+            all_employees = User.objects.filter(
+                role=employee_role,
+                is_active=True
+            ).exclude(id=request.user.id)
+    except RoleMaster.DoesNotExist:
+        all_employees = User.objects.none()
+    
+    total_employees = all_employees.count()
+    
+    # 今月面談を1回以上実施した人（completed or フィードバック済み）
+    completed_this_month = Interview.objects.filter(
+        manager=request.user,
+        scheduled_at__gte=first_day_of_month,
+        scheduled_at__lt=now
+    ).filter(
+        Q(status__code='completed') | Q(feedback__isnull=False)
+    )
+    if user_department:
+        completed_this_month = completed_this_month.filter(employee__department=user_department)
+    
+    # 実施済みの部下IDリスト（重複なし）
+    completed_employee_ids = completed_this_month.values_list('employee_id', flat=True).distinct()
+    completed_count = len(set(completed_employee_ids))  # x
+    
+    remaining_count = total_employees - completed_count  # z
+    if remaining_count < 0:
+        remaining_count = 0
+    
+    # 実施率 m = x / (x + z) * 100
+    if total_employees > 0:
+        completion_rate = int((completed_count / total_employees) * 100)
+    else:
+        completion_rate = 0
+    
+    # 進行中・今後の面談（自分が担当する面談）
+    # 実施済み（completed）は表示しない
     upcoming_query = Interview.objects.filter(
         manager=request.user,
         scheduled_at__gte=now
+    ).exclude(
+        status__code='completed'  # 実施済みを除外
     )
     if user_department:
          upcoming_query = upcoming_query.filter(employee__department=user_department)
@@ -78,6 +143,12 @@ def interview_home(request):
         'search_results': search_results,
         'upcoming_interviews': upcoming_interviews,
         'recent_interviews': recent_interviews,
+        # 新規追加
+        'action_count': action_count,
+        'action_interviews': action_interviews_list,
+        'completion_rate': completion_rate,
+        'completed_count': completed_count,
+        'remaining_count': remaining_count,
     })
 
     # 部下リスト（自分以外）
@@ -169,8 +240,16 @@ def interview_create(request):
         except Exception as e:
             messages.error(request, f'保存に失敗しました: {e}')
     
-    # 部下リスト（自分以外）
-    employees = User.objects.exclude(id=request.user.id).filter(is_active=True)
+    # 部下リスト（employee権限のみ）
+    from accounts.models import RoleMaster
+    try:
+        employee_role = RoleMaster.objects.get(code='employee')
+        employees = User.objects.exclude(id=request.user.id).filter(
+            is_active=True,
+            role=employee_role
+        )
+    except RoleMaster.DoesNotExist:
+        employees = User.objects.none()
     return render(request, 'interviews/create.html', {'employees': employees})
 
 @login_required
@@ -227,6 +306,14 @@ def interview_feedback(request, pk):
                 'memo': memo
             }
         )
+        
+        # ★追加: 面談ステータスを「実施済み」に更新
+        status_completed, _ = InterviewStatusMaster.objects.get_or_create(
+            code='completed', 
+            defaults={'name': '実施済み'}
+        )
+        interview.status = status_completed
+        interview.save()
         
         # --- AIによる部下分析の更新 ---
         employee = interview.employee
@@ -298,3 +385,88 @@ def member_analysis(request, pk):
         'target_user': target_user, 
         'analysis': analysis
     })
+
+@login_required
+def interview_history_select(request):
+    """
+    過去の面談一覧：メンバー選択画面
+    interview_create と同じロジックで employee 権限のユーザーを表示
+    """
+    from accounts.models import RoleMaster
+    
+    if request.method == 'POST':
+        employee_id = request.POST.get('employee')
+        if employee_id:
+            return redirect('member_analysis', pk=employee_id)
+    
+    # 部下リスト（employee権限のみ）
+    try:
+        employee_role = RoleMaster.objects.get(code='employee')
+        employees = User.objects.exclude(id=request.user.id).filter(
+            is_active=True,
+            role=employee_role
+        )
+    except RoleMaster.DoesNotExist:
+        employees = User.objects.none()
+    
+    return render(request, 'interviews/history_select.html', {'employees': employees})
+
+@login_required
+def follow_up_report(request):
+    """
+    要フォローアップレポート
+    最近面談していないメンバーを表示
+    """
+    from accounts.models import RoleMaster
+    from django.db.models import Max
+    
+    user_department = request.user.department
+    now = timezone.now()
+    
+    # 部署内のemployee権限のユーザー一覧
+    try:
+        employee_role = RoleMaster.objects.get(code='employee')
+        if user_department:
+            all_employees = User.objects.filter(
+                department=user_department,
+                role=employee_role,
+                is_active=True
+            ).exclude(id=request.user.id)
+        else:
+            all_employees = User.objects.filter(
+                role=employee_role,
+                is_active=True
+            ).exclude(id=request.user.id)
+    except RoleMaster.DoesNotExist:
+        all_employees = User.objects.none()
+    
+    # 各メンバーの最終面談日を取得
+    members_data = []
+    for employee in all_employees:
+        # このマネージャーとこの部下の面談履歴
+        last_interview = Interview.objects.filter(
+            manager=request.user,
+            employee=employee
+        ).order_by('-scheduled_at').first()
+        
+        if last_interview:
+            last_date = last_interview.scheduled_at
+            days_since = (now - last_date).days
+        else:
+            last_date = None
+            days_since = 999  # 面談履歴なし
+        
+        members_data.append({
+            'employee': employee,
+            'last_interview': last_interview,
+            'last_date': last_date,
+            'days_since': days_since,
+        })
+    
+    # 最終面談日が古い順にソート（面談履歴なしが最優先）
+    members_data.sort(key=lambda x: -x['days_since'])
+    
+    return render(request, 'interviews/follow_up_report.html', {
+        'members_data': members_data,
+    })
+

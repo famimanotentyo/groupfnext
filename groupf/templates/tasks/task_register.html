@@ -324,6 +324,44 @@
             // スタイル調整
             dateInput.classList.add('form-control', 'border-end-0');
             
+            // ★追加: 日時バリデーション
+            function setMinDateTime() {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                const minDateTime = now.toISOString().slice(0, 16);
+                dateInput.min = minDateTime;
+            }
+
+            function validateDateTime() {
+                const selectedDate = new Date(dateInput.value);
+                const now = new Date();
+                
+                // エラーメッセージ要素を取得または作成
+                let errorDiv = document.getElementById('dueDateError');
+                if (!errorDiv) {
+                    errorDiv = document.createElement('div');
+                    errorDiv.id = 'dueDateError';
+                    errorDiv.className = 'text-danger small mt-1 fw-bold';
+                    errorDiv.textContent = '過去の日時は選択できません。現在より後の日時を選択してください。';
+                    dateInput.closest('.mb-4').appendChild(errorDiv);
+                }
+                
+                if (dateInput.value && selectedDate <= now) {
+                    dateInput.classList.add('is-invalid');
+                    errorDiv.style.display = 'block';
+                    return false;
+                } else {
+                    dateInput.classList.remove('is-invalid');
+                    errorDiv.style.display = 'none';
+                    return true;
+                }
+            }
+
+            // 初期化
+            setMinDateTime();
+            dateInput.addEventListener('change', validateDateTime);
+            dateInput.addEventListener('input', validateDateTime);
+            
             // 1. 初期状態の制御
             // 値が入っていない場合はテキストタイプにしてプレースホルダーを表示
             if (!dateInput.value) {
@@ -337,6 +375,18 @@
             // 2. フォーカス時の制御
             dateInput.addEventListener('focus', function() {
                 this.type = 'datetime-local';
+                setMinDateTime(); // フォーカス時に再設定
+                
+                // 値がまだない場合、初期時間を23:59に設定
+                if (!this.value) {
+                    const now = new Date();
+                    now.setDate(now.getDate() + 1);
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    this.value = `${year}-${month}-${day}T23:59`;
+                }
+                
                 // カレンダーを自動で開く場合は以下を追加（お好みで）
                 if ('showPicker' in HTMLInputElement.prototype) {
                     try { this.showPicker(); } catch(e) {}
@@ -348,12 +398,14 @@
                 if (!this.value) {
                     this.type = 'text'; // 値がなければテキストに戻してプレースホルダー表示
                 }
+                validateDateTime();
             });
 
             // 4. アイコンクリック時の制御
             if (calendarIcon) {
                 calendarIcon.addEventListener('click', function() {
                     dateInput.type = 'datetime-local'; // まず型を日時にする
+                    setMinDateTime(); // 最小値を再設定
                     dateInput.focus(); // フォーカスを当てる
                     
                     // ブラウザ標準のピッカーを表示するメソッド

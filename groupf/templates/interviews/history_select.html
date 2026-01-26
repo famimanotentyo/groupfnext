@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}過去の面談一覧 - メンバー選択{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 800px;">
+    <h2 class="h3 mb-4"><i class="fas fa-history text-primary"></i> 過去の面談一覧</h2>
+    
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <p class="text-muted mb-4">
+                面談履歴を確認したいメンバーを選択してください。<br>
+                選択後、そのメンバーとの過去の面談一覧とAI分析レポートが表示されます。
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold">メンバーを選択してください</label>
+                    <select name="employee" class="form-select" required>
+                        <option value="" selected disabled>メンバーを選択してください</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp.id }}">{{ emp.last_name }} {{ emp.first_name }} ({{ emp.department.name|default:"-" }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-search"></i> 面談履歴を表示
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="mt-4 text-center">
+        <a href="{% url 'interview_home' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> 面談TOPへ戻る
+        </a>
+    </div>
+</div>
+{% endblock %}

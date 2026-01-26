@@ -32,4 +32,5 @@ urlpatterns = [
     path('my-tasks/<int:task_id>/return/', views.task_return_page, name='task_return_page'),
     
     path('interview-advice/', views.interview_advice_menu_page, name='interview_advice_menu_page'),
+    path('surprise/', views.surprise_page, name='surprise_page'),
 ]

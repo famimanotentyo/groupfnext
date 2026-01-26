@@ -228,10 +228,11 @@
         </div>
         <div class="modal-buttons">
             <button id="modalCloseButton" class="btn">戻る</button>
-            <!-- 返却などの処理があればURLを設定 -->
-            <button id="modalReturnButton" class="btn">返却</button>            <!-- 譲渡ボタンのIDを使ってJSでURLを動的にセット -->
+            <!-- 返却・譲渡ボタンは自作タスク以外のみ表示 -->
+            <button id="modalReturnButton" class="btn">返却</button>
             <a id="modalTransferLink" href="#" class="btn">譲渡</a>
-            <a id="modalCompleteLink" href="#" class="btn modal-btn-complete">完了</a>        </div>
+            <a id="modalCompleteLink" href="#" class="btn modal-btn-complete">完了</a>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -298,9 +299,10 @@ function openTaskModal(taskData) {
     // --- リンク先の設定 ---
 
     // 譲渡リンク
-    document.getElementById('modalTransferLink').href = `/my-tasks/${taskData.id}/transfer/`;
+    const transferLink = document.getElementById('modalTransferLink');
+    transferLink.href = `/my-tasks/${taskData.id}/transfer/`;
     
-    // ★追加：完了リンクの設定（エラーメッセージのパスに合わせて /task/ID/complete/ に設定）
+    // 完了リンク
     const completeLink = document.getElementById('modalCompleteLink');
     if (completeLink) {
         completeLink.href = `/task/${taskData.id}/complete/`;
@@ -310,8 +312,19 @@ function openTaskModal(taskData) {
     const returnBtn = document.getElementById('modalReturnButton');
     if (returnBtn) {
         returnBtn.onclick = function() {
-            window.location.href = `/my-tasks/${taskData.id}/return/`;
+            if (confirm('このタスクを返却しますか？')) {
+                window.location.href = `/my-tasks/${taskData.id}/return/`;
+            }
         };
+    }
+    
+    // ★自作タスクの場合は返却・譲渡ボタンを非表示
+    if (taskData.is_self_task) {
+        if (returnBtn) returnBtn.style.display = 'none';
+        if (transferLink) transferLink.style.display = 'none';
+    } else {
+        if (returnBtn) returnBtn.style.display = 'inline-block';
+        if (transferLink) transferLink.style.display = 'inline-block';
     }
 
     // モーダルを表示
