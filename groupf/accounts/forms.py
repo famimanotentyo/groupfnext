@@ -91,3 +91,33 @@ class LoginForm(AuthenticationForm):
     # AuthenticationForm already has a clean() method that authenticates.
     # We don't need to override it if we use standard authentication backend.
 
+class PasswordResetRequestForm(forms.Form):
+    """パスワードリセット申請フォーム"""
+    employee_number = forms.CharField(
+        label='社員番号',
+        max_length=20,
+        widget=forms.TextInput(attrs={'placeholder': '社員番号', 'class': 'form-control'})
+    )
+    
+    manager = forms.ModelChoiceField(
+        label='送信先上司を選択',
+        queryset=User.objects.none(), # __init__でセットする
+        empty_label="上司を選択してください",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # manager権限（またはそれ以上）を持つユーザーをプルダウンに表示
+        # role.code で判別 (admin, manager, etc.)
+        # 必要に応じて 'admin' も含めるかどうか検討。今回は 'manager' 以上とする。
+        self.fields['manager'].queryset = User.objects.filter(
+            is_active=True,
+            role__code__in=['manager', 'admin']
+        ).order_by('last_name', 'first_name')
+
+    def clean_employee_number(self):
+        emp_num = self.cleaned_data.get('employee_number')
+        if not User.objects.filter(employee_number=emp_num, is_active=True).exists():
+            raise forms.ValidationError('指定された社員番号のユーザーは見つかりません。')
+        return emp_num

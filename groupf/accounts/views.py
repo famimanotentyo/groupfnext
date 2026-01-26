@@ -9,8 +9,10 @@ from django.views.generic.edit import CreateView
 from django.utils import timezone
 from .models import User
 from .models import User
-from .forms import ProfileEditForm, LoginForm, AccountAdminEditForm
+from .forms import ProfileEditForm, LoginForm, AccountAdminEditForm, PasswordResetRequestForm
 from tasks.models import Task
+from notifications.models import Notification, NotificationTypeMaster
+
 
 
 class CustomLoginView(LoginView):
@@ -238,7 +240,52 @@ def profile_edit_page(request):
     return render(request, 'accounts/profile_edit.html', context)
 
 def password_reset_request_view(request):
-    return render(request, 'accounts/password_reset_request.html')
+    """
+    パスワードリセット申請画面
+    """
+    if request.method == 'POST':
+        form = PasswordResetRequestForm(request.POST)
+        if form.is_valid():
+            employee_number = form.cleaned_data['employee_number']
+            manager = form.cleaned_data['manager']
+            
+            # 申請者ユーザーを取得
+            try:
+                requesting_user = User.objects.get(employee_number=employee_number)
+                
+                # 通知タイプ 'info' を取得 (なければ作成またはエラーハンドリング)
+                # populate_data.py で作成済み前提だが、念のためget
+                try:
+                    info_type = NotificationTypeMaster.objects.get(code='info')
+                except NotificationTypeMaster.DoesNotExist:
+                     # フォールバック: タイプなしor適当なもの
+                     # 本番ではエラー以前にマスタ必須
+                     info_type = None
+
+                # マネージャーへの通知を作成
+                # リンク先は、その対象ユーザーの編集画面とする (管理者/マネージャー向け画面)
+                # URL: accounts/edit/<int:pk>/
+                link_url = reverse_lazy('account_edit_page', kwargs={'pk': requesting_user.pk})
+
+                Notification.objects.create(
+                    recipient=manager,
+                    title="パスワードリセット申請",
+                    message=f"{requesting_user.last_name} {requesting_user.first_name} さん ({requesting_user.employee_number}) からパスワードリセットの依頼がありました。\n詳細画面からリセットURLを発行してください。",
+                    notification_type=info_type,
+                    link_url=link_url,
+                    related_object_id=requesting_user.pk
+                )
+                
+                messages.success(request, f"{manager.last_name} {manager.first_name} さんへリセット申請を送信しました。")
+                return redirect('login')
+                
+            except User.DoesNotExist:
+                # フォームのcleanでチェック済みだが念のため
+                messages.error(request, "指定されたユーザーが見つかりません。")
+    else:
+        form = PasswordResetRequestForm()
+
+    return render(request, 'accounts/password_reset_request.html', {'form': form})
 
 @login_required
 def user_profile_detail(request, pk):
@@ -248,9 +295,17 @@ def user_profile_detail(request, pk):
 def member_list_view(request):
     return render(request, 'accounts/member_list.html')
 
+from django.core.exceptions import PermissionDenied
+
 @login_required
 def manager_member_detail(request, pk):
     target_member = get_object_or_404(User, pk=pk)
+    
+    # 権限チェック: マネージャーは自部署のメンバーのみ閲覧可
+    if request.user.role.code == 'manager':
+        if not request.user.department or target_member.department != request.user.department:
+            raise PermissionDenied("他部署のメンバー情報は閲覧できません。")
+
     tasks = target_member.assigned_tasks.all().select_related('status', 'requested_by', 'task_type').order_by('due_date')
     
     context = {
@@ -263,11 +318,30 @@ def manager_member_detail(request, pk):
 @login_required
 def account_edit_page(request, pk):
     """
-    管理者用アカウント編集画面
+    管理者・マネージャー用アカウント編集画面
+    - Admin: 全ユーザー編集可能
+    - Manager: Employeeのみ編集可能、Admin/Managerは閲覧のみ（基本編集も制限するかは要件次第だが、安全のためEmployee以外はreadonly扱いにする）
     """
     target_user = get_object_or_404(User, pk=pk)
     
+    # 権限判定ロジック
+    is_admin = (request.user.role.code == 'admin')
+    is_manager = (request.user.role.code == 'manager')
+    target_is_employee = (target_user.role.code == 'employee')
+
+    can_edit = False
+    if is_admin:
+        can_edit = True
+    elif is_manager and target_is_employee:
+        can_edit = True
+    
+    # ※マネージャーが自分自身を編集する場合の考慮が必要なら追加（今回は管理画面としての体裁なので他者編集を前提）
+    
     if request.method == 'POST':
+        if not can_edit:
+             messages.error(request, 'このユーザーを編集する権限がありません。')
+             return redirect('account_edit_page', pk=pk)
+
         form = AccountAdminEditForm(request.POST, instance=target_user)
         if form.is_valid():
             form.save()
@@ -280,6 +354,57 @@ def account_edit_page(request, pk):
         'page_title': 'アカウント編集',
         'form': form,
         'target_user': target_user,
+        'can_edit': can_edit, # テンプレート制御用
     }
     return render(request, 'accounts/account_edit.html', context)
 
+@login_required
+def trigger_password_reset(request, pk):
+    """
+    管理者によるパスワードリセットトリガー
+    """
+    # 権限チェック（管理者 or マネージャー）
+    if not request.user.role or request.user.role.code not in ['admin', 'manager']:
+        messages.error(request, '権限がありません。')
+        return redirect('account_list_page')
+
+    if request.method != 'POST':
+        messages.error(request, '無効なリクエストです。')
+        return redirect('account_edit_page', pk=pk)
+
+    target_user = get_object_or_404(User, pk=pk)
+    
+    # ★追加: マネージャーはEmployee以外リセット不可
+    if request.user.role.code == 'manager':
+        if target_user.role.code != 'employee':
+             messages.error(request, 'マネージャーは一般社員以外のパスワードリセットを行えません。')
+             return redirect('account_edit_page', pk=pk)
+
+    try:
+        from django.contrib.auth.tokens import default_token_generator
+        from django.utils.http import urlsafe_base64_encode
+        from django.utils.encoding import force_bytes
+        from django.urls import reverse
+
+        # トークン生成
+        token = default_token_generator.make_token(target_user)
+        uid = urlsafe_base64_encode(force_bytes(target_user.pk))
+        
+        # リセットURL構築
+        # 'password_reset_confirm' というnameのURLパターンが存在することを前提としています
+        reset_path = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+        full_url = request.build_absolute_uri(reset_path)
+
+        # ログ出力（メール送信シミュレーション）
+        print("="*60)
+        print(f"[Password Reset Trigger]")
+        print(f"User: {target_user.last_name} {target_user.first_name} ({target_user.email})")
+        print(f"Reset URL: {full_url}")
+        print("="*60)
+
+        messages.success(request, f'{target_user.last_name} さんのパスワードリセットURLを発行しました（ターミナルを確認してください）。')
+
+    except Exception as e:
+        messages.error(request, f'エラーが発生しました: {e}')
+
+    return redirect('account_edit_page', pk=pk)

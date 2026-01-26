@@ -18,76 +18,104 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">{{ form.last_name.label }}</label>
-                        {{ form.last_name }}
+                        <input type="text" name="{{ form.last_name.name }}" value="{{ form.last_name.value|default:'' }}" class="form-control" {% if not can_edit %}disabled{% endif %}>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">{{ form.first_name.label }}</label>
-                        {{ form.first_name }}
+                        <input type="text" name="{{ form.first_name.name }}" value="{{ form.first_name.value|default:'' }}" class="form-control" {% if not can_edit %}disabled{% endif %}>
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">{{ form.last_name_kana.label }}</label>
-                        {{ form.last_name_kana }}
+                        <input type="text" name="{{ form.last_name_kana.name }}" value="{{ form.last_name_kana.value|default:'' }}" class="form-control" {% if not can_edit %}disabled{% endif %}>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">{{ form.first_name_kana.label }}</label>
-                        {{ form.first_name_kana }}
+                        <input type="text" name="{{ form.first_name_kana.name }}" value="{{ form.first_name_kana.value|default:'' }}" class="form-control" {% if not can_edit %}disabled{% endif %}>
                     </div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">{{ form.email.label }}</label>
-                    {{ form.email }}
+                    <input type="email" name="{{ form.email.name }}" value="{{ form.email.value|default:'' }}" class="form-control" {% if not can_edit %}disabled{% endif %}>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">{{ form.employee_number.label }}</label>
-                    {{ form.employee_number }}
+                    <input type="text" name="{{ form.employee_number.name }}" value="{{ form.employee_number.value|default:'' }}" class="form-control" {% if not can_edit %}disabled{% endif %}>
                 </div>
 
                 <h5 class="mb-3 border-bottom pb-2 mt-4">所属・権限</h5>
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">{{ form.department.label }}</label>
-                        {{ form.department }}
+                         {# フォームのレンダリングをカスタマイズして disabled を付与 #}
+                         {% if can_edit %}
+                            {{ form.department }}
+                         {% else %}
+                            <input type="text" class="form-control" value="{{ target_user.department.name|default:'未所属' }}" disabled>
+                         {% endif %}
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">{{ form.role.label }}</label>
-                        {{ form.role }}
+                        {% if can_edit %}
+                            {{ form.role }}
+                        {% else %}
+                             <input type="text" class="form-control" value="{{ target_user.role.name|default:'-' }}" disabled>
+                        {% endif %}
                     </div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">{{ form.hire_date.label }}</label>
-                        {{ form.hire_date }}
+                        <input type="date" name="{{ form.hire_date.name }}" value="{{ form.hire_date.value|date:'Y-m-d'|default:'' }}" class="form-control" {% if not can_edit %}disabled{% endif %}>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">{{ form.birth_date.label }}</label>
-                        {{ form.birth_date }}
+                        <input type="date" name="{{ form.birth_date.name }}" value="{{ form.birth_date.value|date:'Y-m-d'|default:'' }}" class="form-control" {% if not can_edit %}disabled{% endif %}>
                     </div>
                 </div>
 
                 <h5 class="mb-3 border-bottom pb-2 mt-4">アカウント状態・セキュリティ</h5>
                 <div class="mb-3 form-check form-switch">
-                    {{ form.is_active }}
-                    <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
-                        {{ form.is_active.label }}
-                    </label>
+                     {% if can_edit %}
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            {{ form.is_active.label }}
+                        </label>
+                     {% else %}
+                        <input type="checkbox" class="form-check-input" {% if target_user.is_active %}checked{% endif %} disabled>
+                        <label class="form-check-label">アカウント状態（有効/無効）</label>
+                     {% endif %}
                     <div class="form-text">無効にすると、このユーザーはログインできなくなります（論理削除）。</div>
                 </div>
 
                 <div class="mb-4">
                     <label class="form-label d-block">パスワード設定</label>
-                    <a href="#" class="btn btn-outline-danger btn-sm"
-                        onclick="alert('パスワードリセット機能は現在準備中です。\n（本来はここにリセットメール送信機能などを実装します）'); return false;">
-                        <i class="fas fa-key"></i> パスワードリセット（仮）
-                    </a>
+                    {% if can_edit %}
+                    <button type="submit" formaction="{% url 'trigger_password_reset' target_user.id %}" 
+                            class="btn btn-outline-danger btn-sm"
+                            onclick="return confirm('本当にこのユーザーのパスワードリセットURLを発行しますか？\n（ターミナルにURLが表示されます）');">
+                        <i class="fas fa-key"></i> パスワードリセットURLを発行
+                    </button>
+                    {% else %}
+                        <button type="button" class="btn btn-outline-secondary btn-sm" disabled>
+                            <i class="fas fa-lock"></i> 変更権限がありません
+                        </button>
+                    {% endif %}
+                    <div class="form-text mt-1">
+                        ※クリックするとパスワード再設定用のURLが発行され、ターミナルに表示されます（開発環境用）。
+                    </div>
                 </div>
 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button type="submit" class="btn btn-primary px-4">保存する</button>
+                    {% if can_edit %}
+                        <button type="submit" class="btn btn-primary px-4">保存する</button>
+                    {% else %}
+                        <button type="button" class="btn btn-secondary px-4" disabled>保存不可</button>
+                    {% endif %}
                 </div>
             </form>
         </div>

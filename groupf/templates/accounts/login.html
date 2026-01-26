@@ -126,7 +126,7 @@
 
             {# パスワードリセット画面へのリンク #}
             {# まだURL設定がない場合は href="#" にしておいてください #}
-            <a href="#" class="password-reset-link">パスワードをお忘れの方はこちら&gt;&gt;&gt;</a>
+            <a href="{% url 'password_reset_request' %}" class="password-reset-link">パスワードをお忘れの方はこちら&gt;&gt;&gt;</a>
             
             {# ログイン後のリダイレクト先指定 (hidden input) #}
             <input type="hidden" name="next" value="{{ next }}">

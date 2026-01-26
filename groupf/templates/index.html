@@ -31,9 +31,15 @@
         background-color: #fff;
     }
 
-    .dashboard-card:hover {
+    /* 遷移可能な場合のみホバー効果をつける */
+    .dashboard-card.clickable:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+    }
+    
+    .dashboard-card.non-clickable:hover {
+        /* 何もしない */
     }
 </style>
 {% endblock %}
@@ -46,10 +52,11 @@
     {% if user.role.code == 'manager' or user.role.code == 'admin' %}
     <h2 class="mb-4 text-center fw-bold text-primary">チームタスクダッシュボード<a href="/surprise/" style="font-size: 4px; color: transparent; text-decoration: none; user-select: none;">.</a></h2>
 
-    {% if user.role.code == 'admin' and all_departments %}
-    <div class="row justify-content-center mb-4">
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm border-0">
+    {# --- 部署フィルタ & 全体チャートセクション --- #}
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0 h-100">
+                 <div class="card-header bg-light fw-bold">表示設定</div>
                 <div class="card-body">
                     <label for="departmentSelect" class="form-label fw-bold text-muted small mb-2">
                         <i class="fas fa-building me-1"></i>部署を選択
@@ -62,10 +69,32 @@
                         </option>
                         {% endfor %}
                     </select>
+                     <div class="mt-3 small text-muted">
+                        ※ マネージャーは自部署のメンバー詳細のみ閲覧可能です
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+             <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-light fw-bold">
+                    {% if selected_department %}
+                        {{ selected_department.name }} 全体の状況
+                    {% else %}
+                        全体状況
+                    {% endif %}
+                </div>
+                <div class="card-body d-flex justify-content-center align-items-center" style="min-height: 250px;">
+                    {# 全体チャート領域 #}
+                     <div class="position-relative" style="width: 200px; height: 200px;">
+                        <canvas id="overallChart"></canvas>
+                         <div class="center-text" id="overallCenterText"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    
     <script>
     function filterByDepartment(deptId) {
         if (deptId) {
@@ -75,7 +104,7 @@
         }
     }
     </script>
-    {% endif %}
+    {# ---------------------------------------- #}
 
     <div class="row" id="dashboard"></div>
 
@@ -99,14 +128,15 @@
 {% if user.role.code == 'manager' or user.role.code == 'admin' %}
 <script>
     /* Djangoから渡されたJSONデータを受け取る */
-    /* エディタでエラーが出る場合は const membersData = JSON.parse("{{ members_json|escapejs }}"); としてください */
     const membersData = JSON.parse("{{ members_json|escapejs }}");
+    const overallStats = JSON.parse("{{ overall_stats_json|escapejs }}"); // 追加: 全体統計
+    
+    // JS内で権限チェックを行うための変数
+    const userRoleCode = "{{ user.role.code }}";
+    const userDeptId = "{{ user_department_id|default:'' }}";
 
     /* -----------------------------
-       1. 期限カテゴリ判定関数 (条件を変更)
-       - 0~3日以内
-       - 4~7日以内
-       - 8日以上 (それ以外)
+       1. 期限カテゴリ判定関数
     ------------------------------*/
     function getDeadlineCategory(deadline) {
         if (!deadline) return "8日以上"; // 期限なし
@@ -114,8 +144,6 @@
         const today = new Date();
         today.setHours(0, 0, 0, 0); // 時間は無視
         const d = new Date(deadline);
-
-        // 日数差を計算
         const diffTime = d - today;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -125,11 +153,10 @@
     }
 
     /* -----------------------------
-       2. カテゴリごとの色定義 (内側・外側で分岐)
+       2. カテゴリごとの色定義
     ------------------------------*/
     function getDeadlineColor(cat, type) {
         if (type === 'request') {
-            // ★内側（振られたタスク）
             switch (cat) {
                 case "0-3日": return "#dc3545"; // 赤
                 case "4-7日": return "#198754"; // 緑
@@ -137,7 +164,6 @@
                 default: return "#e9ecef";
             }
         } else {
-            // ★外側（自分のタスク）
             switch (cat) {
                 case "0-3日": return "#fd7e14"; // オレンジ
                 case "4-7日": return "#ffc107"; // 黄色
@@ -147,18 +173,149 @@
         }
     }
 
-    /* カテゴリの並び順 */
     const CATEGORY_ORDER = ["0-3日", "4-7日", "8日以上"];
+    
+    // --- 共通グラフ描画関数 ---
+    function renderDoughnutChart(canvas, dataInput, isClickable, memberId = null, chartTitle = "") {
+        
+        let outerMap, innerMap;
+
+        // データ形式の吸収 (Member用とOverall用で構造が少し違うため)
+        if (dataInput.own && dataInput.request && dataInput.own.length !== undefined) {
+             // Member用 (リスト形式)
+             function getCategoryCounts(dataList) {
+                const map = {};
+                CATEGORY_ORDER.forEach(cat => map[cat] = 0);
+                dataList.forEach(t => {
+                    const cat = getDeadlineCategory(t.deadline);
+                    if (map.hasOwnProperty(cat)) map[cat]++;
+                });
+                return map;
+            }
+            outerMap = getCategoryCounts(dataInput.own);
+            innerMap = getCategoryCounts(dataInput.request);
+        } else {
+             // Overall用 (集計済み辞書形式)
+             outerMap = dataInput.own;
+             innerMap = dataInput.request;
+        }
+
+        const outerData = CATEGORY_ORDER.map(cat => outerMap[cat]);
+        const innerData = CATEGORY_ORDER.map(cat => innerMap[cat]);
+        const outerColors = CATEGORY_ORDER.map(cat => getDeadlineColor(cat, 'own'));
+        const innerColors = CATEGORY_ORDER.map(cat => getDeadlineColor(cat, 'request'));
+
+        // 合計計算
+        const totalReq = innerData.reduce((a, b) => a + b, 0);
+        const totalOwn = outerData.reduce((a, b) => a + b, 0);
+        const totalAll = totalReq + totalOwn;
+
+        new Chart(canvas, {
+            type: "doughnut",
+            data: {
+                labels: CATEGORY_ORDER,
+                datasets: [
+                    {
+                        data: outerData,
+                        backgroundColor: outerColors,
+                        cutout: "55%", radius: "95%", borderWidth: 2, borderColor: "#ffffff"
+                    },
+                    {
+                        data: innerData,
+                        backgroundColor: innerColors,
+                        cutout: "30%", radius: "100%", borderWidth: 2, borderColor: "#ffffff"
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                onClick: (e) => {
+                    if (isClickable && memberId) {
+                         window.location.href = `/management/member/${memberId}/`;
+                    }
+                },
+                onHover: (event, chartElement) => {
+                     if (isClickable && memberId) {
+                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                     }
+                },
+                plugins: {
+                    tooltip: {
+                         callbacks: {
+                            label: function (context) {
+                                const datasetIndex = context.datasetIndex;
+                                const dataMap = datasetIndex === 0 ? outerMap : innerMap;
+                                const typeName = datasetIndex === 0 ? "自作" : "依頼";
+                                const category = CATEGORY_ORDER[context.dataIndex];
+                                const count = dataMap[category] || 0;
+                                return `${typeName}: ${count}件 (${category})`;
+                            }
+                        }
+                    },
+                    legend: { display: false }
+                }
+            }
+        });
+        
+        return { totalReq, totalAll };
+    }
+
+
+    /* -----------------------------
+       ★ 全体チャート描画
+    ------------------------------*/
+    const overallCanvas = document.getElementById("overallChart");
+    if (overallCanvas && overallStats) {
+        const stats = renderDoughnutChart(overallCanvas, overallStats, false, null, "全体");
+        
+        const overallText = document.getElementById("overallCenterText");
+        if(overallText) {
+             overallText.innerHTML = `
+            <div style="font-size:0.75rem; color:#888; line-height:1;">依頼</div>
+            <div style="font-size:1.5rem; font-weight:800; line-height:1.1;">${stats.totalReq}</div>
+            <div style="font-size:0.8rem; color:#ccc;">/${stats.totalAll}</div>
+            `;
+        }
+    }
+
+
+    /* -----------------------------
+       ★ メンバー個別チャート描画
+    ------------------------------*/
     const dashboard = document.getElementById("dashboard");
 
     if (membersData && membersData.length > 0) {
         membersData.forEach(function (member) {
 
+            // ★ 閲覧権限チェック
+            // 自分の部署以外はクリック不可にする判定など
+            let isClickable = false;
+            if (userRoleCode === 'admin') {
+                isClickable = true;
+            } else if (userRoleCode === 'manager') {
+                if (String(member.department_id) === String(userDeptId)) {
+                    isClickable = true;
+                }
+            }
+            
+            const cardClass = isClickable ? "clickable" : "non-clickable";
+
             // --- 基本的なカード構築 ---
             const col = document.createElement("div");
             col.className = "col-12 col-md-6 col-xl-3 d-flex";
             const card = document.createElement("div");
-            card.className = "card w-100 mb-4 d-flex flex-column align-items-center p-3 dashboard-card";
+            card.className = `card w-100 mb-4 d-flex flex-column align-items-center p-3 dashboard-card ${cardClass}`;
+            
+            // クリックイベントリスナー (カード全体をクリック可能にする場合)
+            if (isClickable) {
+                card.onclick = (e) => {
+                     // グラフ上のクリックはChart.js側で拾うが、カード余白クリックも遷移させたい場合
+                     // ただしChart.jsのonClickと競合しないよう注意が必要
+                     // 今回はChart.jsのonClickに任せる、またはここに実装してcanvasのonClickを外すも手
+                     // ここではシンプルにChart.jsに任せ、カードスタイルだけ変更
+                };
+            }
 
             // メンバー情報
             const info = document.createElement("div");
@@ -190,103 +347,21 @@
             chartContainer.appendChild(canvas);
             card.appendChild(chartContainer);
 
-            // --- データ集計 ---
-            const taskData = member.tasks;
-
-            function getCategoryCounts(dataList) {
-                const map = {};
-                CATEGORY_ORDER.forEach(cat => map[cat] = 0);
-                dataList.forEach(t => {
-                    const cat = getDeadlineCategory(t.deadline);
-                    if (map.hasOwnProperty(cat)) map[cat]++;
-                });
-                return map;
-            }
-
-            const outerMap = getCategoryCounts(taskData.own);
-            const innerMap = getCategoryCounts(taskData.request);
-
-            // データ配列作成
-            const outerData = CATEGORY_ORDER.map(cat => outerMap[cat]);
-            const innerData = CATEGORY_ORDER.map(cat => innerMap[cat]);
-
-            // ★色配列作成 (ここで 'own' / 'request' を指定して色を分ける)
-            const outerColors = CATEGORY_ORDER.map(cat => getDeadlineColor(cat, 'own'));
-            const innerColors = CATEGORY_ORDER.map(cat => getDeadlineColor(cat, 'request'));
-
             // --- グラフ描画 ---
-            new Chart(canvas, {
-                type: "doughnut",
-                data: {
-                    labels: CATEGORY_ORDER,
-                    datasets: [
-                        {
-                            // 外側: 自作タスク (Own) -> オレンジ/黄/灰
-                            data: outerData,
-                            backgroundColor: outerColors,
-                            cutout: "55%",
-                            radius: "95%",
-                            borderWidth: 2,
-                            borderColor: "#ffffff"
-                        },
-                        {
-                            // 内側: 依頼タスク (Request) -> 赤/緑/青
-                            data: innerData,
-                            backgroundColor: innerColors,
-                            cutout: "30%",
-                            radius: "100%",
-                            borderWidth: 2,
-                            borderColor: "#ffffff"
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-
-                    // ★★★ ここから追加：クリックイベント ★★★
-                    onClick: (e) => {
-                        // マネージャーなら詳細画面へ遷移
-                        // member.id は forEach のスコープにあるのでそのまま使えます
-                        window.location.href = `/management/member/${member.id}/`;
-                    },
-                    // カーソルをポインター（指マーク）にする
-                    onHover: (event, chartElement) => {
-                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
-                    },
-                    // ★★★ ここまで追加 ★★★
-
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    const datasetIndex = context.datasetIndex;
-                                    const dataMap = datasetIndex === 0 ? outerMap : innerMap;
-                                    const typeName = datasetIndex === 0 ? "自作" : "依頼";
-                                    const category = CATEGORY_ORDER[context.dataIndex];
-                                    const count = dataMap[category] || 0;
-                                    return `${typeName}: ${count}件 (${category})`;
-                                }
-                            }
-                        },
-                        legend: { display: false }
-                    }
-                }
-            });
-
-            // --- 中央テキスト ---
+             // 中央テキスト用コンテナ
             const centerText = document.createElement("div");
             centerText.className = "center-text";
-            const totalReq = taskData.request.length;
-            const totalAll = taskData.own.length + taskData.request.length;
-
-            centerText.innerHTML = `
-            <div style="font-size:0.75rem; color:#888; line-height:1;">依頼</div>
-            <div style="font-size:1.5rem; font-weight:800; line-height:1.1;">${totalReq}</div>
-            <div style="font-size:0.8rem; color:#ccc;">/${totalAll}</div>
-        `;
             chartContainer.appendChild(centerText);
 
+            const memberStats = renderDoughnutChart(canvas, member.tasks, isClickable, member.id);
+            
+            centerText.innerHTML = `
+            <div style="font-size:0.75rem; color:#888; line-height:1;">依頼</div>
+            <div style="font-size:1.5rem; font-weight:800; line-height:1.1;">${memberStats.totalReq}</div>
+            <div style="font-size:0.8rem; color:#ccc;">/${memberStats.totalAll}</div>
+            `;
+
+            
             // --- 難易度表示 ---
             const diffDiv = document.createElement("div");
             diffDiv.className = "d-flex justify-content-center flex-wrap gap-2 w-100 small mt-2";
@@ -296,7 +371,7 @@
                 { key: 'low', label: '低', color: 'text-success' }
             ];
             diffConfig.forEach(conf => {
-                const count = taskData.difficulty[conf.key] || 0;
+                const count = member.tasks.difficulty[conf.key] || 0;
                 diffDiv.innerHTML += `<div class="px-2"><span class="fw-bold ${conf.color}">${conf.label}</span>: ${count}</div>`;
             });
             card.appendChild(diffDiv);

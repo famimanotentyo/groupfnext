@@ -21,7 +21,7 @@ def top_page(request):
     if not request.user.is_authenticated:
         return redirect('login')
     
-    # --- 統一検索ロジック ---
+    # --- 統一検索ロジック (省略なしで維持) ---
     search_query = request.GET.get('q')
     search_results = None
     
@@ -32,9 +32,6 @@ def top_page(request):
             Q(description__icontains=search_query),
             is_deleted=False
         ).select_related('status', 'visibility')
-        
-        # 公開範囲などでフィルタリングが必要ならここで行う (例: status='approved')
-        # manual_hits = manual_hits.filter(status__code='approved') 
         
         # ナレッジ検索
         question_hits = Question.objects.filter(
@@ -57,36 +54,48 @@ def top_page(request):
     if role_code == 'manager' or role_code == 'admin':
         from accounts.models import Department
         
-        # 部署リストを取得（admin用）
-        all_departments = Department.objects.all() if role_code == 'admin' else None
+        # 部署リストを取得（admin/manager 共に全取得）
+        all_departments = Department.objects.all()
         selected_department_id = request.GET.get('department')
         selected_department = None
         
+        # ★ マネージャーのデフォルトは自部署
+        if role_code == 'manager' and not selected_department_id:
+             if request.user.department:
+                 selected_department = request.user.department
+                 selected_department_id = str(selected_department.id)
+
         # メンバー取得ロジック
-        if role_code == 'admin':
-            # adminの場合、部署が選択されていればフィルタ、なければ全員
-            if selected_department_id:
-                try:
-                    selected_department = Department.objects.get(id=selected_department_id)
-                    members = User.objects.filter(is_active=True, department=selected_department).exclude(id=request.user.id)
-                except Department.DoesNotExist:
-                    members = User.objects.filter(is_active=True).exclude(id=request.user.id)
-            else:
+        if selected_department_id:
+            try:
+                selected_department = Department.objects.get(id=selected_department_id)
+                members = User.objects.filter(is_active=True, department=selected_department).exclude(id=request.user.id)
+            except Department.DoesNotExist:
                 members = User.objects.filter(is_active=True).exclude(id=request.user.id)
         else:
-            if request.user.department:
-                members = User.objects.filter(
-                    is_active=True, 
-                    department=request.user.department
-                ).exclude(id=request.user.id)
-            else:
-                members = []
+            # 部署未選択（全部署表示）
+             members = User.objects.filter(is_active=True).exclude(id=request.user.id)
 
         dashboard_data = []
+        
+        # ★ 全体チャート用の集計変数
+        overall_stats = {
+            'own': {'0-3日': 0, '4-7日': 0, '8日以上': 0},
+            'request': {'0-3日': 0, '4-7日': 0, '8日以上': 0}
+        }
+
+        # 期限判定用ヘルパー関数 (JSとロジックを合わせる)
+        def get_deadline_category(deadline_date):
+            if not deadline_date:
+                return '8日以上'
+            # deadline_date is DateTimeField, convert to date
+            diff = (deadline_date.date() - timezone.now().date()).days
+            if diff <= 3: return '0-3日'
+            elif diff <= 7: return '4-7日'
+            else: return '8日以上'
 
         for member in members:
             # スキル: 完了済みタスクのタグ上位3つを取得
-            # Note: User.get_completed_tags needs to use tasks app models
             skills = [tag.name for tag in member.get_completed_tags()][:3]
             
             grade = member.role.name if member.role else "-"
@@ -98,12 +107,17 @@ def top_page(request):
             difficulty_counts = {'high': 0, 'mid': 0, 'low': 0}
 
             for task in active_tasks:
+                # 期限集計用
+                cat = get_deadline_category(task.due_date)
+                
                 deadline_str = task.due_date.strftime('%Y-%m-%d') if task.due_date else ''
                 
                 if task.requested_by and task.requested_by != member:
                     request_tasks.append({'deadline': deadline_str})
+                    overall_stats['request'][cat] += 1 # 全体集計加算
                 else:
                     own_tasks.append({'deadline': deadline_str})
+                    overall_stats['own'][cat] += 1 # 全体集計加算
 
                 task_tags = [t.name for t in task.tags.all()]
                 is_high = any('難易度高' in t or '高' in t for t in task_tags if '難易度' in t)
@@ -119,6 +133,7 @@ def top_page(request):
             dashboard_data.append({
                 'id': member.id,
                 'name': f"{member.last_name} {member.first_name}",
+                'department_id': member.department.id if member.department else None, # 部署IDを追加
                 'grade': grade,
                 'skills': skills,
                 'tasks': {
@@ -131,8 +146,10 @@ def top_page(request):
         context = {
             'page_title': 'チームダッシュボード',
             'members_json': json.dumps(dashboard_data, ensure_ascii=False),
+            'overall_stats_json': json.dumps(overall_stats, ensure_ascii=False), # 追加
             'all_departments': all_departments,
             'selected_department': selected_department,
+            'user_department_id': request.user.department.id if request.user.department else None, # JS制御用
         }
         return render(request, 'index.html', context)
     
