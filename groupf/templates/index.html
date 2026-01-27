@@ -49,11 +49,15 @@
 {% block content %}
 <div class="container-fluid px-4 py-4">
 
-    {% if user.role.code == 'manager' or user.role.code == 'admin' %}
+    {# employeeも含めて全員ダッシュボードを表示 #}
+    {% if user.role.code == 'manager' or user.role.code == 'admin' or user.role.code == 'employee' %}
     <h2 class="mb-4 text-center fw-bold text-primary">チームタスクダッシュボード<a href="/surprise/" style="font-size: 4px; color: transparent; text-decoration: none; user-select: none;">.</a></h2>
 
     {# --- 部署フィルタ & 全体チャートセクション --- #}
     <div class="row justify-content-center mb-5">
+        
+        {# 部署選択は admin/manager のみ、かつ all_departments が存在する場合のみ表示 #}
+        {% if user.role.code in 'admin,manager' and all_departments %}
         <div class="col-md-5">
             <div class="card shadow-sm border-0 h-100">
                  <div class="card-header bg-light fw-bold">表示設定</div>
@@ -75,6 +79,8 @@
                 </div>
             </div>
         </div>
+        {% endif %}
+
         <div class="col-md-5">
              <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-light fw-bold">
@@ -109,11 +115,11 @@
     <div class="row" id="dashboard"></div>
 
     {% else %}
+    {# ここには基本的に来ないはずだが、roleがない場合などのフォールバック #}
     <section class="tasks-overview">
-        <h2>持ちタスク</h2>
+        <h2>お知らせ</h2>
         <div class="alert alert-info">
-            現在、一般社員用のダッシュボードは開発中です。<br>
-            タスクボードまたはマイタスク画面をご確認ください。
+            アカウントに権限が設定されていません。管理者に連絡してください。
         </div>
     </section>
 
@@ -125,7 +131,8 @@
 
 {# ★★★ JavaScriptはここへ ★★★ #}
 {% block extra_js %}
-{% if user.role.code == 'manager' or user.role.code == 'admin' %}
+{# 全員共通でスクリプト読み込み #}
+{% if user.role.code == 'manager' or user.role.code == 'admin' or user.role.code == 'employee' %}
 <script>
     /* Djangoから渡されたJSONデータを受け取る */
     const membersData = JSON.parse("{{ members_json|escapejs }}");
@@ -267,6 +274,7 @@
     ------------------------------*/
     const overallCanvas = document.getElementById("overallChart");
     if (overallCanvas && overallStats) {
+        // employeeも全体チャートは見たいが、クリックでどこかに飛ぶ機能はないので isClickable=false
         const stats = renderDoughnutChart(overallCanvas, overallStats, false, null, "全体");
         
         const overallText = document.getElementById("overallCenterText");
@@ -289,14 +297,17 @@
         membersData.forEach(function (member) {
 
             // ★ 閲覧権限チェック
-            // 自分の部署以外はクリック不可にする判定など
             let isClickable = false;
+            
             if (userRoleCode === 'admin') {
                 isClickable = true;
             } else if (userRoleCode === 'manager') {
                 if (String(member.department_id) === String(userDeptId)) {
                     isClickable = true;
                 }
+            } else if (userRoleCode === 'employee') {
+                 // employee は ReadOnly (クリック不可)
+                 isClickable = false; 
             }
             
             const cardClass = isClickable ? "clickable" : "non-clickable";
@@ -307,13 +318,10 @@
             const card = document.createElement("div");
             card.className = `card w-100 mb-4 d-flex flex-column align-items-center p-3 dashboard-card ${cardClass}`;
             
-            // クリックイベントリスナー (カード全体をクリック可能にする場合)
+            // クリックイベントリスナー
             if (isClickable) {
                 card.onclick = (e) => {
-                     // グラフ上のクリックはChart.js側で拾うが、カード余白クリックも遷移させたい場合
-                     // ただしChart.jsのonClickと競合しないよう注意が必要
-                     // 今回はChart.jsのonClickに任せる、またはここに実装してcanvasのonClickを外すも手
-                     // ここではシンプルにChart.jsに任せ、カードスタイルだけ変更
+                     // Chart.js onClick is separate
                 };
             }
 

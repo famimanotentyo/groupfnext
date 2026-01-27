@@ -2,15 +2,15 @@
     <nav>
         <ul>
             {# === 全員共通 === #}
+            <li><a href="{% url 'top_page' %}"><i class="fas fa-home me-2"></i>ホーム</a></li>
             <li><a href="{% url 'notifications_index' %}"><i class="fas fa-bell me-2"></i>通知</a></li>
             <li><a href="{% url 'schedule_index' %}"><i class="fas fa-calendar-alt me-2"></i>カレンダー</a></li>
             {# === 管理者 (admin) 用メニュー === #}
             {% if user.role.code == 'admin' %}
             {% endif %}
             {% if user.role.code == 'admin' or user.role.code == 'manager' %}
-                <li><a href="{% url 'top_page' %}"><i class="fas fa-home me-2"></i>ホーム</a></li>
                 <li><a href="{% url 'task_board_page' %}"><i class="fas fa-columns me-2"></i>タスクボード</a></li>
-                <li><a href="{% url 'task_assign_page' %}"><i class="fas fa-tasks me-2"></i>タスク管理</a></li>
+                <li><a href="{% url 'task_assign_page' %}"><i class="fas fa-tasks me-2"></i>タスク割り当て</a></li>
                 <li><a href="{% url 'task_register_page' %}"><i class="fas fa-plus-circle me-2"></i>タスク登録</a></li>
                 <li><a href="{% url 'task_guide_page' %}"><i class="fas fa-book me-2"></i>タスクガイド</a></li>
                 <li><a href="{% url 'my_tasks_page' %}"><i class="fas fa-check-square me-2"></i>Myタスク</a></li>

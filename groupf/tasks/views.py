@@ -50,112 +50,130 @@ def top_page(request):
     # ユーザーの権限コードを取得
     role_code = request.user.role.code if request.user.role else None
 
-    # --- マネージャー または 管理者 ---
-    if role_code == 'manager' or role_code == 'admin':
-        from accounts.models import Department
-        
-        # 部署リストを取得（admin/manager 共に全取得）
-        all_departments = Department.objects.all()
-        selected_department_id = request.GET.get('department')
-        selected_department = None
-        
-        # ★ マネージャーのデフォルトは自部署
-        if role_code == 'manager' and not selected_department_id:
-             if request.user.department:
-                 selected_department = request.user.department
-                 selected_department_id = str(selected_department.id)
+    # ★ 変更: 全ロールでダッシュボードを表示する方向へ修正
+    # ただし、employee は自部署固定、managerは自部署デフォルトだが変更可、
+    # adminは全部署可（managerと同じでOK）
 
-        # メンバー取得ロジック
-        if selected_department_id:
-            try:
-                selected_department = Department.objects.get(id=selected_department_id)
-                members = User.objects.filter(is_active=True, department=selected_department).exclude(id=request.user.id)
-            except Department.DoesNotExist:
-                members = User.objects.filter(is_active=True).exclude(id=request.user.id)
-        else:
-            # 部署未選択（全部署表示）
-             members = User.objects.filter(is_active=True).exclude(id=request.user.id)
-
-        dashboard_data = []
-        
-        # ★ 全体チャート用の集計変数
-        overall_stats = {
-            'own': {'0-3日': 0, '4-7日': 0, '8日以上': 0},
-            'request': {'0-3日': 0, '4-7日': 0, '8日以上': 0}
-        }
-
-        # 期限判定用ヘルパー関数 (JSとロジックを合わせる)
-        def get_deadline_category(deadline_date):
-            if not deadline_date:
-                return '8日以上'
-            # deadline_date is DateTimeField, convert to date
-            diff = (deadline_date.date() - timezone.now().date()).days
-            if diff <= 3: return '0-3日'
-            elif diff <= 7: return '4-7日'
-            else: return '8日以上'
-
-        for member in members:
-            # スキル: 完了済みタスクのタグ上位3つを取得
-            skills = [tag.name for tag in member.get_completed_tags()][:3]
-            
-            grade = member.role.name if member.role else "-"
-
-            active_tasks = member.assigned_tasks.exclude(status__code='completed')
-            
-            own_tasks = []     
-            request_tasks = [] 
-            difficulty_counts = {'high': 0, 'mid': 0, 'low': 0}
-
-            for task in active_tasks:
-                # 期限集計用
-                cat = get_deadline_category(task.due_date)
-                
-                deadline_str = task.due_date.strftime('%Y-%m-%d') if task.due_date else ''
-                
-                if task.requested_by and task.requested_by != member:
-                    request_tasks.append({'deadline': deadline_str})
-                    overall_stats['request'][cat] += 1 # 全体集計加算
-                else:
-                    own_tasks.append({'deadline': deadline_str})
-                    overall_stats['own'][cat] += 1 # 全体集計加算
-
-                task_tags = [t.name for t in task.tags.all()]
-                is_high = any('難易度高' in t or '高' in t for t in task_tags if '難易度' in t)
-                is_mid = any('難易度中' in t or '中' in t for t in task_tags if '難易度' in t)
-                is_low = any('難易度低' in t or '低' in t for t in task_tags if '難易度' in t)
-
-                if is_high: difficulty_counts['high'] += 1
-                elif is_mid: difficulty_counts['mid'] += 1
-                elif is_low: difficulty_counts['low'] += 1
-                else:
-                    difficulty_counts['mid'] += 1 
-
-            dashboard_data.append({
-                'id': member.id,
-                'name': f"{member.last_name} {member.first_name}",
-                'department_id': member.department.id if member.department else None, # 部署IDを追加
-                'grade': grade,
-                'skills': skills,
-                'tasks': {
-                    'own': own_tasks,
-                    'request': request_tasks,
-                    'difficulty': difficulty_counts
-                }
-            })
-
-        context = {
-            'page_title': 'チームダッシュボード',
-            'members_json': json.dumps(dashboard_data, ensure_ascii=False),
-            'overall_stats_json': json.dumps(overall_stats, ensure_ascii=False), # 追加
-            'all_departments': all_departments,
-            'selected_department': selected_department,
-            'user_department_id': request.user.department.id if request.user.department else None, # JS制御用
-        }
-        return render(request, 'index.html', context)
+    from accounts.models import Department
     
-    else:
-        return render(request, 'index.html', {'page_title': 'マイダッシュボード'})
+    # 部署リスト（admin/managerは選択用に取得）
+    all_departments = []
+    if role_code in ['admin', 'manager']:
+        all_departments = Department.objects.all()
 
+    selected_department_id = request.GET.get('department')
+    selected_department = None
+    
+    # --- 部署選択ロジック ---
+    if role_code == 'employee':
+        # employeeは自部署固定
+        if request.user.department:
+            selected_department = request.user.department
+            selected_department_id = str(selected_department.id)
+        else:
+            # 部署なしemployeeの場合... 全体表示にするか、あるいは何も表示しないか
+            # ここでは「部署なし」として扱う（members絞り込みで対応）
+            pass
+
+    elif role_code == 'manager':
+        # managerはデフォルト自部署（選択あればそちら優先）
+        if not selected_department_id and request.user.department:
+             selected_department = request.user.department
+             selected_department_id = str(selected_department.id)
+    
+    # --- メンバー取得ロジック ---
+    if selected_department_id:
+        try:
+             # IDから部署オブジェクト取得（employeeの場合すでに取得済みだが念のため）
+            if not selected_department or str(selected_department.id) != str(selected_department_id):
+                selected_department = Department.objects.get(id=selected_department_id)
+            
+            # 自部署のメンバー（自分以外）
+            members = User.objects.filter(is_active=True, department=selected_department).exclude(id=request.user.id)
+        except Department.DoesNotExist:
+            members = User.objects.filter(is_active=True).exclude(id=request.user.id)
+    else:
+        # 部署未選択（全部署表示） - employeeで部署なしの場合もここに来る
+        members = User.objects.filter(is_active=True).exclude(id=request.user.id)
+
+    # --- ダッシュボードデータ構築 (全員共通) ---
+    dashboard_data = []
+    
+    # ★ 全体チャート用の集計変数
+    overall_stats = {
+        'own': {'0-3日': 0, '4-7日': 0, '8日以上': 0},
+        'request': {'0-3日': 0, '4-7日': 0, '8日以上': 0}
+    }
+
+    # 期限判定用ヘルパー関数 (JSとロジックを合わせる)
+    def get_deadline_category(deadline_date):
+        if not deadline_date:
+            return '8日以上'
+        # deadline_date is DateTimeField, convert to date
+        diff = (deadline_date.date() - timezone.now().date()).days
+        if diff <= 3: return '0-3日'
+        elif diff <= 7: return '4-7日'
+        else: return '8日以上'
+
+    for member in members:
+        # スキル: 完了済みタスクのタグ上位3つを取得
+        skills = [tag.name for tag in member.get_completed_tags()][:3]
+        
+        grade = member.role.name if member.role else "-"
+
+        active_tasks = member.assigned_tasks.exclude(status__code='completed')
+        
+        own_tasks = []     
+        request_tasks = [] 
+        difficulty_counts = {'high': 0, 'mid': 0, 'low': 0}
+
+        for task in active_tasks:
+            # 期限集計用
+            cat = get_deadline_category(task.due_date)
+            
+            deadline_str = task.due_date.strftime('%Y-%m-%d') if task.due_date else ''
+            
+            if task.requested_by and task.requested_by != member:
+                request_tasks.append({'deadline': deadline_str})
+                overall_stats['request'][cat] += 1 # 全体集計加算
+            else:
+                own_tasks.append({'deadline': deadline_str})
+                overall_stats['own'][cat] += 1 # 全体集計加算
+
+            task_tags = [t.name for t in task.tags.all()]
+            is_high = any('難易度高' in t or '高' in t for t in task_tags if '難易度' in t)
+            is_mid = any('難易度中' in t or '中' in t for t in task_tags if '難易度' in t)
+            is_low = any('難易度低' in t or '低' in t for t in task_tags if '難易度' in t)
+
+            if is_high: difficulty_counts['high'] += 1
+            elif is_mid: difficulty_counts['mid'] += 1
+            elif is_low: difficulty_counts['low'] += 1
+            else:
+                difficulty_counts['mid'] += 1 
+
+        dashboard_data.append({
+            'id': member.id,
+            'name': f"{member.last_name} {member.first_name}",
+            'department_id': member.department.id if member.department else None, # 部署IDを追加
+            'grade': grade,
+            'skills': skills,
+            'tasks': {
+                'own': own_tasks,
+                'request': request_tasks,
+                'difficulty': difficulty_counts
+            }
+        })
+
+    context = {
+        'page_title': 'チームダッシュボード' if role_code in ['manager', 'admin', 'employee'] else 'ホーム',
+        'members_json': json.dumps(dashboard_data, ensure_ascii=False),
+        'overall_stats_json': json.dumps(overall_stats, ensure_ascii=False), # 追加
+        'all_departments': all_departments, # employeeの場合は空リストになるので選択肢でない
+        'selected_department': selected_department,
+        'user_department_id': request.user.department.id if request.user.department else None, # JS制御用
+    }
+    return render(request, 'index.html', context)
+    
 def task_assign(request):
     context = {}
     return render(request, 'tasks/task_assign.html', context)
