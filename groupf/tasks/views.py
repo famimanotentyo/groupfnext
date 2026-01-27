@@ -872,3 +872,35 @@ def manager_dashboard_view(request):
 
 def surprise_page(request):
     return render(request, 'tasks/surprise.html')
+
+@login_required
+def delete_task(request, task_id):
+    """
+    タスクを物理削除する（自作タスク用）
+    """
+    task = get_object_or_404(Task, id=task_id)
+
+    # 権限チェック: 自作タスクか、あるいは自分が作成したタスクかなどを確認
+    is_authorized = False
+    
+    # Check if user is in assigned users (basic check for "My Task")
+    if request.user in task.assigned_users.all():
+        # Check if it is a self task
+        try:
+            if task.task_type and task.task_type.code == 'self':
+                is_authorized = True
+            elif task.requested_by == request.user:
+                 is_authorized = True
+        except Exception:
+            pass
+
+    if not is_authorized:
+        messages.error(request, 'タスクを削除する権限がありません。')
+        return redirect('my_tasks_page')
+
+    # 物理削除実行
+    task_title = task.title
+    task.delete()
+    messages.success(request, f'タスク「{task_title}」を削除しました。')
+
+    return redirect('my_tasks_page')

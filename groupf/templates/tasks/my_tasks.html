@@ -229,6 +229,7 @@
         <div class="modal-buttons">
             <button id="modalCloseButton" class="btn">戻る</button>
             <!-- 返却・譲渡ボタンは自作タスク以外のみ表示 -->
+            <button id="modalDeleteButton" class="btn" style="color: #dc3545; border-color: #dc3545; display: none;">削除</button>
             <button id="modalReturnButton" class="btn">返却</button>
             <a id="modalTransferLink" href="#" class="btn">譲渡</a>
             <a id="modalCompleteLink" href="#" class="btn modal-btn-complete">完了</a>
@@ -317,14 +318,27 @@ function openTaskModal(taskData) {
             }
         };
     }
+
+    // 削除ボタンの設定
+    const deleteBtn = document.getElementById('modalDeleteButton');
+    if (deleteBtn) {
+        deleteBtn.onclick = function() {
+            if (confirm('本当に削除しますか？\n（物理削除のため、復元できません）')) {
+                window.location.href = `/task/${taskData.id}/delete/`;
+            }
+        };
+    }
+
     
-    // ★自作タスクの場合は返却・譲渡ボタンを非表示
+    // ★自作タスクの場合は返却・譲渡ボタンを非表示、削除ボタンを表示
     if (taskData.is_self_task) {
         if (returnBtn) returnBtn.style.display = 'none';
         if (transferLink) transferLink.style.display = 'none';
+        if (deleteBtn) deleteBtn.style.display = 'inline-block';
     } else {
         if (returnBtn) returnBtn.style.display = 'inline-block';
         if (transferLink) transferLink.style.display = 'inline-block';
+        if (deleteBtn) deleteBtn.style.display = 'none';
     }
 
     // モーダルを表示

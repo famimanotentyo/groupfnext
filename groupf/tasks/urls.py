@@ -30,6 +30,7 @@ urlpatterns = [
     path('my-tasks/<int:task_id>/transfer/', views.task_transfer_page, name='task_transfer_page'),
     path('completed-tasks/', views.completed_task_list_view, name='completed_task_list'),
     path('my-tasks/<int:task_id>/return/', views.task_return_page, name='task_return_page'),
+    path('task/<int:task_id>/delete/', views.delete_task, name='delete_task'),
     
     path('interview-advice/', views.interview_advice_menu_page, name='interview_advice_menu_page'),
     path('surprise/', views.surprise_page, name='surprise_page'),
