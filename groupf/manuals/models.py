@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+import os
 
 # ==========================================
 # マスタテーブル定義
@@ -88,3 +89,16 @@ class ViewingHistory(models.Model):
 
     def __str__(self):
         return f"{self.user} -> {self.manual} ({self.viewed_at})"
+
+
+class ManualFile(models.Model):
+    manual = models.ForeignKey(Manual, on_delete=models.CASCADE, related_name="files")
+    file = models.FileField(upload_to="manuals/files/")
+    original_name = models.CharField(max_length=255, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.original_name or os.path.basename(self.file.name)
+
+    class Meta:
+        ordering = ["-uploaded_at"]

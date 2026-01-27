@@ -2,8 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from .models import Manual, ViewingHistory, ManualStatusMaster
-from .forms import ManualCreateForm
+from django.http import FileResponse, Http404
+from .models import Manual, ViewingHistory, ManualStatusMaster, ManualFile
+from .forms import ManualCreateForm, ManualFileUploadForm
+import os
 
 
 @login_required
@@ -55,11 +57,60 @@ def manual_detail(request, pk):
             manual=manual
         )
     
+    # 追加: 添付ファイル取得
+    files = manual.files.all().order_by("-uploaded_at")
+    form = ManualFileUploadForm()
+
     context = { 
         'manual': manual, 
-        'page_title': manual.title, 
+        'page_title': manual.title,
+        'files': files,
+        'upload_form': form,
     }
     return render(request, 'manual/manual_detail.html', context)
+
+@login_required
+def manual_files_upload(request, pk):
+    manual = get_object_or_404(Manual, pk=pk, is_deleted=False)
+
+    if request.method == "POST":
+        form = ManualFileUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            for f in form.cleaned_data["files"]:
+                ManualFile.objects.create(
+                    manual=manual,
+                    file=f,
+                    original_name=f.name,
+                )
+            return redirect("manual_detail", pk=manual.pk)
+
+        # バリデーションエラー時は詳細画面を再表示
+        # 既存の詳細表示ロジックに合わせて context を再構築する必要があるが
+        # ここでは簡易的に redirect するか、エラーを表示する形にする。
+        # 今回は一旦 detail に戻す
+        messages.error(request, "ファイルのアップロードに失敗しました。")
+        return redirect("manual_detail", pk=manual.pk)
+
+    return redirect("manual_detail", pk=manual.pk)
+
+@login_required
+def manual_file_view(request, file_id):
+    try:
+        mf = ManualFile.objects.get(id=file_id)
+    except ManualFile.DoesNotExist:
+        raise Http404("file not found")
+
+    # PDFならinlineで返す（iframe表示できる）
+    if (mf.file.name or "").lower().endswith(".pdf"):
+        response = FileResponse(mf.file.open("rb"), content_type="application/pdf")
+        # 日本語ファイル名対応のため、filename* を使うのがモダンだが簡易的に original_name を使う
+        # 必要に応じて URL エンコードなど検討
+        response["Content-Disposition"] = f'inline; filename="{mf.original_name or mf.file.name}"'
+        return response
+
+    # PDF以外は通常のURLでOK（開くリンクは別でもよい）
+    return FileResponse(mf.file.open("rb"))
+
 
 @login_required
 def toggle_manual_favorite(request, pk):

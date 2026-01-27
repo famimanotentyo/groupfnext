@@ -1,0 +1,143 @@
+NEW　マニュアル閲覧
+
+①HTML
+{% extends 'base.html' %}
+{% block title %}{{ manual.title }}{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 20px; max-width: 960px; margin: auto;">
+  <h1>{{ manual.title }}</h1>
+
+  <form method="post" enctype="multipart/form-data"
+        action="{% url 'manual_files_upload' manual.id %}">
+    {% csrf_token %}
+    {{ upload_form.files }}
+    <button type="submit">ファイル投稿</button>
+  </form>
+
+  <hr>
+
+  <h3>添付ファイル</h3>
+
+  <ul>
+    {% for f in manual.files.all %}
+      <li>
+        <a href="{{ f.file.url }}" target="_blank" rel="noopener">
+          {{ f.original_name|default:f.file.name }}
+        </a>
+
+        {% if f.file.url|lower|slice:"-4:" == ".pdf" %}
+          <iframe src="{{ f.file.url }}" style="width:100%; height:600px;"></iframe>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li style="color:#6c757d;">まだファイルが投稿されていません</li>
+    {% endfor %}
+  </ul>
+
+  <div style="margin-top: 30px;">
+    <a href="{% url 'manual_list' %}" class="btn btn-secondary">一覧に戻る</a>
+  </div>
+</div>
+{% endblock %}
+
+②views.py
+@login_required
+def manual_detail_view(request, pk):
+    manual = get_object_or_404(Manual, pk=pk, is_deleted=False)
+
+    files = manual.files.all().order_by("-uploaded_at")  # ←追加
+
+    form = ManualFileUploadForm()
+    return render(request, "manual/manual_detail.html", {
+        "manual": manual,
+        "files": files,          # ←追加
+        "upload_form": form,
+    })
+
+@login_required
+def manual_files_upload(request, pk):
+    manual = get_object_or_404(Manual, pk=pk, is_deleted=False)
+
+    if request.method == "POST":
+        form = ManualFileUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            for f in form.cleaned_data["files"]:
+                ManualFile.objects.create(
+                    manual=manual,
+                    file=f,
+                    original_name=f.name,
+                )
+            return redirect("manual_detail", pk=manual.pk)
+
+        # バリデーションエラー時は詳細画面を再表示
+        return render(request, "manual/manual_detail.html", {
+            "manual": manual,
+            "upload_form": form,
+        })
+
+    return redirect("manual_detail", pk=manual.pk)
+
+@login_required
+def manual_file_view(request, file_id):
+    try:
+        mf = ManualFile.objects.get(id=file_id)
+    except ManualFile.DoesNotExist:
+        raise Http404("file not found")
+
+    # PDFならinlineで返す（iframe表示できる）
+    if (mf.file.name or "").lower().endswith(".pdf"):
+        response = FileResponse(mf.file.open("rb"), content_type="application/pdf")
+        response["Content-Disposition"] = f'inline; filename="{mf.original_name or mf.file.name}"'
+        return response
+
+    # PDF以外は通常のURLでOK（開くリンクは別でもよい）
+    return FileResponse(mf.file.open("rb"))
+
+③forms.py
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True  # ★これが必須
+
+class MultipleFileField(forms.FileField):
+    widget = MultipleFileInput
+
+    def clean(self, data, initial=None):
+        # data は request.FILES.getlist(...) 相当で list になる
+        if not data:
+            return []
+
+        # list/tuple のときは1個ずつ親の FileField.clean に流す
+        if isinstance(data, (list, tuple)):
+            parent_clean = super().clean  # ★内包表記の中で super() しない
+            return [parent_clean(d, initial) for d in data]
+
+        # 単体で来た場合も list にして返す
+        return [super().clean(data, initial)]
+
+
+class ManualFileUploadForm(forms.Form):
+    files = MultipleFileField(
+        required=True,
+        label="ファイル",
+        widget=MultipleFileInput(attrs={"multiple": True}),
+    )
+
+④urls.py
+path("manuals/<int:pk>/files/upload/", views.manual_files_upload, name="manual_files_upload"),
+path("manual-files/<int:file_id>/view/", views.manual_file_view, name="manual_file_view"),
+
+⑤settings.py
+X_FRAME_OPTIONS = "SAMEORIGIN"
+
+⑥models.py
+class ManualFile(models.Model):
+    manual = models.ForeignKey(Manual, on_delete=models.CASCADE, related_name="files")
+    file = models.FileField(upload_to="manuals/files/")
+    original_name = models.CharField(max_length=255, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.original_name or os.path.basename(self.file.name)
+
+    class Meta:
+        ordering = ["-uploaded_at"]

@@ -16,5 +16,9 @@ urlpatterns = [
     
     path('favorite/<int:pk>/', views.toggle_manual_favorite, name='toggle_manual_favorite'),
     path('pending/', views.manual_pending_list_view, name='manual_pending_list'),
+    
+    # Updated/Added paths
     path('<int:pk>/', views.manual_detail_view, name='manual_detail_view_alias'), # Alias
+    path("<int:pk>/files/upload/", views.manual_files_upload, name="manual_files_upload"),
+    path("files/<int:file_id>/view/", views.manual_file_view, name="manual_file_view"),
 ]
