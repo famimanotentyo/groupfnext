@@ -4,6 +4,7 @@
             {# === 全員共通 === #}
             <li><a href="{% url 'top_page' %}"><i class="fas fa-home me-2"></i>ホーム</a></li>
             <li><a href="{% url 'notifications_index' %}"><i class="fas fa-bell me-2"></i>通知</a></li>
+            <li><a href="{% url 'my_tasks_page' %}"><i class="fas fa-check-square me-2"></i>Myタスク</a></li>
             <li><a href="{% url 'schedule_index' %}"><i class="fas fa-calendar-alt me-2"></i>カレンダー</a></li>
             {# === 管理者 (admin) 用メニュー === #}
             {% if user.role.code == 'admin' %}
@@ -13,7 +14,6 @@
                 <li><a href="{% url 'task_assign_page' %}"><i class="fas fa-tasks me-2"></i>タスク割り当て</a></li>
                 <li><a href="{% url 'task_register_page' %}"><i class="fas fa-plus-circle me-2"></i>タスク登録</a></li>
                 <li><a href="{% url 'task_guide_page' %}"><i class="fas fa-book me-2"></i>タスクガイド</a></li>
-                <li><a href="{% url 'my_tasks_page' %}"><i class="fas fa-check-square me-2"></i>Myタスク</a></li>
 
 
                 <!-- <li><a href="#">タスク割り振り</a></li> -->
@@ -25,14 +25,9 @@
             {# === マネージャー (manager) 以上用メニュー === #}
             {# adminもmanagerの機能を使えるようにする場合 #}
             {% if user.role.code == 'employee'%}
-                <h3>部下</h3>
-                <li><a href="{% url 'top_page' %}"><i class="fas fa-home me-2"></i>ホーム</a></li>
-                <li><a href="{% url 'my_tasks_page' %}"><i class="fas fa-check-square me-2"></i>Myタスク</a></li>
                 <li><a href="{% url 'task_board_page' %}"><i class="fas fa-columns me-2"></i>タスクボード</a></li>
                 <li><a href="{% url 'task_register_page' %}"><i class="fas fa-plus-circle me-2"></i>タスク登録</a></li>
-                <li><a href="{% url 'inbox' %}"><i class="fas fa-inbox me-2"></i>インボックス</a></li>
                 <li><a href="{% url 'manual_list' %}"><i class="fas fa-book-open me-2"></i>マニュアル</a></li>
-                <li><a href="{% url 'initial_login_page' %}"><i class="fas fa-sign-in-alt me-2"></i>初回ログイン</a></li>
                 <li><a href="{% url 'completed_task_list' %} "><i class="fas fa-check-double me-2"></i>完了タスク一覧</a></li>
             {% endif %}    
 
