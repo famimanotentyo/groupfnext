@@ -375,7 +375,7 @@ def task_board_page(request):
 
 # Gemini configuration
 genai.configure(api_key=settings.GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.5-flash') # Updated model name as per user code
+model = genai.GenerativeModel('gemini-1.5-flash') # Updated model name as per user code
 TAG_GENERATION_PROMPT_TEMPLATE = """
 以下のタスク名から、ハッシュタグ形式で20個以内の関連タグを生成してください。
 タグには必ず #難易度 (高、中、低) のいずれか一つを含めてください。

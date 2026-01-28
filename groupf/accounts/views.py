@@ -8,28 +8,36 @@ from django.urls import reverse_lazy
 from django.views.generic.edit import CreateView
 from django.utils import timezone
 from .models import User
-from .models import User
 from .forms import ProfileEditForm, LoginForm, AccountAdminEditForm, PasswordResetRequestForm
 from tasks.models import Task
 from notifications.models import Notification, NotificationTypeMaster
 
-
-
+#********************************************************#
+#ログインの一連の流れを管理するクラス
+#get_success_url　→　ログイン成功後に遷移する画面を指定
+#get_context_data　→　ログイン画面に表示するデータを指定
+#********************************************************#
 class CustomLoginView(LoginView):
+    #ログインフォームを指定
     template_name = 'accounts/login.html'
+    #使用するフォームを指定 (forms.pyのLoginForm)
     form_class = LoginForm
+    #ログイン済みの場合、ログイン画面にアクセスさせない
     redirect_authenticated_user = True
 
+    #ログイン後の遷移先
     def get_success_url(self):
+        #
         user = self.request.user
         if not user.is_initial_setup_completed:
             return reverse_lazy('profile_edit_page')
         return reverse_lazy('top_page') 
 
+    # 「気の利いたワード」を表示する
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # ここに「気の利いたワード」のリストを作ります
+        # 「気の利いたワード」のリスト
         quotes = [
             "今日の積み重ねが、未来の自分を楽にします。",
             "完璧を目指すより、まずは終わらせよう。",
@@ -41,6 +49,7 @@ class CustomLoginView(LoginView):
             "タスクの完了は、心の完了。",
             "「忙しい」を「充実している」と言い換えてみる。",
             "とりあえず、コーヒーでも飲みませんか？",
+            "まぁまぁ落ち着いて、深呼吸でもしましょうよ"
         ]
         
         # ランダムに1つ選んでテンプレートに渡す
