@@ -1,35 +1,36 @@
 from django import forms
 from .models import Manual
 
+# ✅ 複数選択を許可する ClearableFileInput
 class MultipleFileInput(forms.ClearableFileInput):
-    allow_multiple_selected = True  # ★これが必須
+    allow_multiple_selected = True
 
+# ✅ 複数ファイルを受け取れる FileField
 class MultipleFileField(forms.FileField):
     widget = MultipleFileInput
 
     def clean(self, data, initial=None):
-        # data は request.FILES.getlist(...) 相当で list になる
+        # required=False のとき data が None になるので空リストを返す
         if not data:
             return []
 
-        # list/tuple のときは1個ずつ親の FileField.clean に流す
+        # ✅ ここが超重要：list comprehension 内で super() を直呼びすると TypeError になりやすい
+        parent_clean = super().clean
+
         if isinstance(data, (list, tuple)):
-            parent_clean = super().clean  # ★内包表記の中で super() しない
             return [parent_clean(d, initial) for d in data]
 
-        # 単体で来た場合も list にして返す
-        return [super().clean(data, initial)]
-
+        return [parent_clean(data, initial)]
 
 class ManualFileUploadForm(forms.Form):
     files = MultipleFileField(
-        required=True,
-        label="ファイル",
-        widget=MultipleFileInput(attrs={"multiple": True}),
+        required=False,
+        widget=MultipleFileInput(attrs={"multiple": True})
     )
 
 class ManualCreateForm(forms.ModelForm):
-
     class Meta:
+        # ここはあなたの Manual モデルに合わせて
+        # model = Manual を書いてください（省略してるなら書く）
         model = Manual
-        fields = ['title', 'description', 'file']
+        fields = ["title", "description"]

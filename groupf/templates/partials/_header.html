@@ -21,7 +21,7 @@
     {% comment %} <a href="{% url 'top_page' %}" class="header-part logo"> {% endcomment %}
     <a href="{% url 'top_page' %}" class="header-part logo">
     <img src="{% static 'tasks/img/logo.png' %}" alt="Logo" class="logo-img" style="height: 55px; width: auto;"></a>
-    <a href="#" class="header-part project-name">プロジェクト</a>
+    <a href="{% url 'top_page' %}" class="header-part project-name">プロジェクト</a>
     <div class="header-part page-title">{{ page_title }}</div>
     <div class="header-controls">
         {% comment %} <a href="#"><i class="fas fa-ellipsis-h"></i></a> {% endcomment %}

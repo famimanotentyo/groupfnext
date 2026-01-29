@@ -40,9 +40,13 @@
                                     <a href="{% url 'manual_approval_list' %}?manual_id={{ manual.pk }}" class="btn btn-sm btn-success me-1">
                                         <i class="fas fa-check"></i> 承認
                                     </a>
-                                    <a href="#" class="btn btn-sm btn-outline-danger">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#rejectModal"
+                                            data-url="{% url 'manual_reject' manual.pk %}"
+                                            data-title="{{ manual.title }}">
                                         <i class="fas fa-times"></i> 却下
-                                    </a>
+                                    </button>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -63,4 +67,45 @@
         </a>
     </div>
 </div>
+
+<!-- Rejection Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="rejectForm" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">マニュアル却下</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>マニュアル「<span id="manualTitle"></span>」を却下しますか？</p>
+                    <div class="mb-3">
+                        <label for="rejectionReason" class="form-label">却下理由 <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="rejectionReason" name="rejection_reason" rows="3" required placeholder="却下理由を入力して、投稿者に通知します。"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="submit" class="btn btn-danger">却下する</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    var rejectModal = document.getElementById('rejectModal')
+    rejectModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget
+        var url = button.getAttribute('data-url')
+        var title = button.getAttribute('data-title')
+        
+        var modalTitle = rejectModal.querySelector('#manualTitle')
+        modalTitle.textContent = title
+        
+        var form = rejectModal.querySelector('#rejectForm')
+        form.action = url
+    })
+</script>
 {% endblock %}

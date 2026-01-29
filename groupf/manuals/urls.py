@@ -5,6 +5,7 @@ urlpatterns = [
     # path('manuals/', ... ) prefix will be added in main urls
     path('', views.manual_list, name='manual_list'),
     path('approval/', views.manual_approval_list, name='manual_approval_list'), 
+    path('reject/<int:pk>/', views.manual_reject, name='manual_reject'),
     path('create/', views.manual_create_view, name='manual_create_view'),
     path('detail/<int:pk>/', views.manual_detail, name='manual_detail'),
     

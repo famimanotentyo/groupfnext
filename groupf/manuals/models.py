@@ -46,7 +46,7 @@ class Manual(models.Model):
     """
     title = models.CharField(max_length=100, verbose_name="マニュアル名")
     description = models.TextField(blank=True, verbose_name="説明・備考")
-    file = models.FileField(upload_to='manuals/', verbose_name="ファイル")
+    file = models.FileField(upload_to='manuals/', verbose_name="ファイル", blank=True, null=True)
     
     # ★修正: CHOICESをForeignKeyに変更
     status = models.ForeignKey(ManualStatusMaster, on_delete=models.PROTECT, null=True, verbose_name="状態")

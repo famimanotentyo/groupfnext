@@ -15,7 +15,7 @@
         margin-top: 20px;
         border: 1px solid #e0e0e0;
         border-radius: 8px;
-        overflow: hidden; /* 角丸からはみ出さないように */
+        /* overflow: hidden;  <-- これがあるとドロップダウンが切れるので削除 */
         background-color: #fff;
     }
 
@@ -36,6 +36,9 @@
         color: #0d6efd;
         font-weight: bold;
         font-size: 15px;
+        /* 枠の丸みをヘッダー上部に適用 */
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
     }
 
     /* 4. 各列の文字の寄せ方（ここがズレ防止のキモ） */
@@ -59,8 +62,10 @@
     .action-menu {
         display: none;
         position: absolute !important;
-        top: 100%;
-        right: 0;
+        /* 行の横（左側）に表示するように変更 */
+        top: -10px;       /* ボタンと少し高さを合わせる（好みで調整） */
+        right: 100%;      /* ボタンの左側に配置 */
+        margin-right: 10px; /* 少し隙間をあける */
         background: white !important;
         border: 1px solid #ddd !important;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;

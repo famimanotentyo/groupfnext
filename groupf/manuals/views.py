@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.http import FileResponse, Http404
 from .models import Manual, ViewingHistory, ManualStatusMaster, ManualFile
+from notifications.models import Notification, NotificationTypeMaster
 from .forms import ManualCreateForm, ManualFileUploadForm
 import os
 
@@ -73,24 +74,22 @@ def manual_detail(request, pk):
 def manual_files_upload(request, pk):
     manual = get_object_or_404(Manual, pk=pk, is_deleted=False)
 
-    if request.method == "POST":
-        form = ManualFileUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            for f in form.cleaned_data["files"]:
-                ManualFile.objects.create(
-                    manual=manual,
-                    file=f,
-                    original_name=f.name,
-                )
-            return redirect("manual_detail", pk=manual.pk)
-
-        # バリデーションエラー時は詳細画面を再表示
-        # 既存の詳細表示ロジックに合わせて context を再構築する必要があるが
-        # ここでは簡易的に redirect するか、エラーを表示する形にする。
-        # 今回は一旦 detail に戻す
-        messages.error(request, "ファイルのアップロードに失敗しました。")
+    if request.method != "POST":
         return redirect("manual_detail", pk=manual.pk)
 
+    files = request.FILES.getlist("files")  # ✅ 複数を確実に取る
+    if not files:
+        messages.error(request, "ファイルが選択されていません。")
+        return redirect("manual_detail", pk=manual.pk)
+
+    for f in files:
+        ManualFile.objects.create(
+            manual=manual,
+            file=f,
+            original_name=getattr(f, "name", "")
+        )
+
+    messages.success(request, f"{len(files)} 件アップロードしました。")
     return redirect("manual_detail", pk=manual.pk)
 
 @login_required
@@ -158,6 +157,60 @@ def manual_approval_list(request):
         except ManualStatusMaster.DoesNotExist:
             messages.error(request, 'ステータスマスタが見つかりません。')
     
+    return redirect('manual_pending_list')
+
+
+@login_required
+def manual_reject(request, pk):
+    """
+    マニュアル却下処理（マネージャー以上のみ）
+    """
+    # 権限チェック
+    if not (request.user.role and request.user.role.code in ['manager', 'admin']):
+        messages.error(request, 'この機能はマネージャー以上の権限が必要です。')
+        return redirect('manual_list')
+    
+    manual = get_object_or_404(Manual, pk=pk)
+    
+    if request.method == 'POST':
+        reason = request.POST.get('rejection_reason', '')
+        
+        try:
+            # ステータスを「却下」に変更
+            rejected_status = ManualStatusMaster.objects.get(code='rejected')
+            manual.status = rejected_status
+            
+            # 論理削除については、要件文に「承認まちから論理削除、状態を却下にする」とあるが
+            # モデル定義上は status='rejected' で表現し、一覧から除外する運用が自然かもしれない。
+            # ただし、is_deleted=Trueにしてしまうと、ユーザー自身も見れなくなる可能性がある。
+            # 要件「上司画面で...承認まちから論理削除」 -> 承認待ちリストから消えるという意味と解釈し、ステータス変更で対応。
+            # もし本当に is_deleted=True にすると、修正して再申請ができなくなる（ゴミ箱行き）ので、
+            # ここでは status='rejected' に変更するだけにとどめる（pendingリストからは消える）。
+            # ※ユーザー要望の「マニュアルを投稿した部下に通知を送るって承認まちから論理削除、状態を却下にする」
+            #   -> status='rejected' にすれば pending ではなくなるのでOK。
+            #   -> もし is_deleted=True も必要なら追加するが、通常はステータス管理で行う。
+            #   -> 文脈的に「承認待ち一覧から消す」という意味合いが強いと判断。
+            
+            manual.save()
+            
+            # 通知作成
+            notif_type = NotificationTypeMaster.objects.get(code='manual_reject')
+            Notification.objects.create(
+                recipient=manual.created_by,
+                title="マニュアルが却下されました",
+                message=f"マニュアル「{manual.title}」が却下されました。\n理由: {reason}",
+                notification_type=notif_type,
+                related_object_id=manual.pk,
+                link_url=f"/manuals/detail/{manual.pk}/" # 修正画面などへのリンクが望ましいが一旦詳細へ
+            )
+            
+            messages.warning(request, f'「{manual.title}」を却下しました。')
+            
+        except ManualStatusMaster.DoesNotExist:
+            messages.error(request, 'ステータスマスタ(rejected)が見つかりません。')
+        except NotificationTypeMaster.DoesNotExist:
+            messages.error(request, '通知タイプマスタ(manual_reject)が見つかりません。')
+            
     return redirect('manual_pending_list')
 
 @login_required

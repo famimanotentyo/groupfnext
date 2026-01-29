@@ -17,15 +17,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="manual_file">ファイル <span class="text-danger">*</span></label>
-                    <div class="file-input-wrapper">
-                        <input type="text" id="file_name_display" class="form-control" placeholder="ファイルが選択されていません" readonly>
-                        <button type="button" id="browse_btn" class="btn btn-browse">参照</button>
-                        <input type="file" id="manual_file" name="file" hidden required>
-                    </div>
-                </div>
-
-                <div class="form-group">
                     <label for="description">説明</label>
                     <textarea id="description" name="description" class="form-control" rows="8" placeholder="マニュアルの説明を入力してください..."></textarea>
                 </div>
@@ -37,25 +28,4 @@
             </form>
         </section>
     </div>
-{% endblock %}
-{% block extra_js %}
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const browseBtn = document.getElementById('browse_btn');
-        const fileInput = document.getElementById('manual_file');
-        const fileNameDisplay = document.getElementById('file_name_display');
-
-        browseBtn.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                fileNameDisplay.value = fileInput.files[0].name;
-            } else {
-                fileNameDisplay.value = 'ファイルが選択されていません';
-            }
-        });
-    });
-</script>
 {% endblock %}
