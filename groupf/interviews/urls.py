@@ -9,5 +9,6 @@ urlpatterns = [
     path('detail/<int:pk>/', views.interview_detail, name='interview_detail'),
     path('feedback/<int:pk>/', views.interview_feedback, name='interview_feedback'),
     path('confirm/<int:pk>/', views.interview_confirm, name='interview_confirm'),
+    path('decline/<int:pk>/', views.interview_decline, name='interview_decline'),
     path('analysis/<int:pk>/', views.member_analysis, name='member_analysis'),
 ]

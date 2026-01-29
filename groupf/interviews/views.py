@@ -117,11 +117,12 @@ def interview_home(request):
     
     # 進行中・今後の面談（自分が担当する面談）
     # 実施済み（completed）は表示しない
+    # ★追加: 却下（declined）も表示しない
     upcoming_query = Interview.objects.filter(
         manager=request.user,
         scheduled_at__gte=now
     ).exclude(
-        status__code='completed'  # 実施済みを除外
+        status__code__in=['completed', 'declined']  # 実施済み・却下を除外
     )
     if user_department:
          upcoming_query = upcoming_query.filter(employee__department=user_department)
@@ -129,9 +130,12 @@ def interview_home(request):
     upcoming_interviews = upcoming_query.select_related('employee', 'status').order_by('scheduled_at')[:5]
     
     # 最近の面談履歴（自分が担当した面談、過去のもの）
+    # ★追加: 却下（declined）も表示しない（あるいは履歴としては残す？要望は「表示しない」なので除外）
     recent_query = Interview.objects.filter(
         manager=request.user,
         scheduled_at__lt=now
+    ).exclude(
+        status__code='declined'
     )
     if user_department:
         recent_query = recent_query.filter(employee__department=user_department)
@@ -274,6 +278,49 @@ def interview_confirm(request, pk):
         return redirect('notifications_index') # 通知一覧などへ戻る
 
     return render(request, 'interviews/confirm.html', {'interview': interview})
+
+
+@login_required
+def interview_decline(request, pk):
+    """
+    面談辞退処理
+    """
+    interview = get_object_or_404(Interview, pk=pk)
+    
+    # 本人確認
+    if interview.employee != request.user:
+        messages.error(request, '他人の面談情報にはアクセスできません。')
+        return redirect('index')
+    
+    if request.method == 'POST':
+        reason = request.POST.get('decline_reason', '')
+        
+        try:
+            # ステータスを「却下・辞退」に変更
+            declined_status = InterviewStatusMaster.objects.get(code='declined')
+            interview.status = declined_status
+            interview.save()
+            
+            # マネージャー（上司）へ通知
+            from notifications.models import Notification, NotificationTypeMaster
+            notif_type, _ = NotificationTypeMaster.objects.get_or_create(code='interview_decline', defaults={'name': '面談辞退'})
+            
+            Notification.objects.create(
+                recipient=interview.manager,
+                title=f"面談が辞退されました（{interview.employee.last_name} {interview.employee.first_name}）",
+                message=f"以下の面談が辞退されました。\nテーマ: {interview.theme}\n日時: {interview.scheduled_at}\n理由: {reason}",
+                notification_type=notif_type,
+                related_object_id=interview.pk,
+                link_url=None # 却下されたので飛ぶ先は特にない、あるいは履歴へ
+            )
+            
+            messages.warning(request, '面談を辞退しました。')
+            return redirect('notifications_index')
+            
+        except InterviewStatusMaster.DoesNotExist:
+             messages.error(request, 'ステータスマスタ(declined)が見つかりません。')
+             
+    return redirect('interview_confirm', pk=pk)
 
 @login_required
 def interview_detail(request, pk):

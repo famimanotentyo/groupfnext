@@ -51,14 +51,54 @@
             <button type="submit" class="btn btn-primary btn-lg">
                 <i class="fas fa-check me-2"></i>承諾する
             </button>
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineModal">
+                <i class="fas fa-times me-2"></i>却下・辞退する
+            </button>
             <a href="{% url 'notifications_index' %}" class="btn btn-outline-secondary">保留して戻る</a>
         </div>
     </form>
+    {% elif interview.status.code == 'declined' %}
+        <div class="alert alert-danger d-flex align-items-center mb-4">
+            <i class="fas fa-times-circle fs-4 me-3"></i>
+            <div>
+                <strong>却下済みです</strong><br>
+                この面談リクエストは却下・辞退されました。
+            </div>
+        </div>
+        <div class="text-center">
+            <a href="{% url 'notifications_index' %}" class="btn btn-secondary">一覧に戻る</a>
+        </div>
     {% else %}
     <div class="text-center">
         <a href="{% url 'notifications_index' %}" class="btn btn-secondary">一覧に戻る</a>
     </div>
     {% endif %}
 
+</div>
+
+<!-- Decline Modal -->
+<div class="modal fade" id="declineModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{% url 'interview_decline' interview.pk %}" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">面談の辞退・却下</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>この面談リクエストを却下（辞退）しますか？<br>上司にその旨が通知されます。</p>
+                    <div class="mb-3">
+                        <label for="declineReason" class="form-label">理由 <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="declineReason" name="decline_reason" rows="3" required placeholder="都合が悪い、体調不良、など具体的な理由を入力してください。"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="submit" class="btn btn-danger">却下する</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}
