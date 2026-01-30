@@ -170,6 +170,27 @@ def interview_create(request):
         location = request.POST.get('location')  # 場所を取得
         scheduled_at = request.POST.get('scheduled_at')
         
+        # 日時必須チェック
+        if not scheduled_at:
+            messages.error(request, '日時（予定）は必須です。')
+            # フォームに入力値を保持して戻したいが、簡易的にリダイレクトまたは再描画
+            # ここでは再描画が望ましいが、view構造上 redirect して再入力させるか、renderで戻すか。
+            # 今回は renderで戻すが、employeesリストが必要。
+            from accounts.models import RoleMaster
+            try:
+                employee_role = RoleMaster.objects.get(code='employee')
+                employees = User.objects.exclude(id=request.user.id).filter(
+                    is_active=True,
+                    role=employee_role
+                )
+            except RoleMaster.DoesNotExist:
+                employees = User.objects.none()
+            return render(request, 'interviews/create.html', {
+                'employees': employees,
+                'error_theme': theme, # 入力保持用（簡易）
+                'error_location': location,
+            })
+
         employee = get_object_or_404(User, pk=employee_id)
         
         # 部下の分析データがあれば取得
@@ -216,7 +237,7 @@ def interview_create(request):
             interview = Interview.objects.create(
                 manager=request.user,
                 employee=employee,
-                scheduled_at=scheduled_at if scheduled_at else datetime.datetime.now(),
+                scheduled_at=scheduled_at, # 必須なのでそのまま使用
                 theme=theme,
                 location=location, # 場所を保存
                 status=status_tentative,

@@ -144,8 +144,8 @@
                                 ブックマーク登録
                             {% endif %}
                         </a>
-                        {% if manual.file %}
-                            <a href="{{ manual.file.url }}" download>ダウンロード</a>
+                        {% if manual.file or manual.files.exists %}
+                             <a href="{% url 'manual_download_zip' manual.pk %}" download>ダウンロード</a>
                         {% endif %}
                     </div>
                 </div>

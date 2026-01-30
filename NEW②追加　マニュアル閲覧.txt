@@ -1,3 +1,6 @@
+NEW②追加　マニュアル閲覧
+
+①manual_detail.html
 {% extends 'base.html' %}
 {% block title %}{{ manual.title }}{% endblock %}
 
@@ -180,3 +183,29 @@
 
 </div>
 {% endblock %}
+
+②views.py
+@login_required
+def manual_file_view(request, file_id):
+    try:
+        mf = ManualFile.objects.get(id=file_id)
+    except ManualFile.DoesNotExist:
+        raise Http404("file not found")
+
+    name = (mf.file.name or "").lower()
+
+    # PDF：iframe用に inline
+    if name.endswith(".pdf"):
+        response = FileResponse(mf.file.open("rb"), content_type="application/pdf")
+        response["Content-Disposition"] = f'inline; filename="{mf.original_name or mf.file.name}"'
+        return response
+
+    # 画像だけ：img表示できるように content_type を付けて inline にする
+    if name.endswith((".png", ".jpg", ".jpeg")):
+        ctype, _ = mimetypes.guess_type(name)
+        response = FileResponse(mf.file.open("rb"), content_type=ctype or "image/jpeg")
+        response["Content-Disposition"] = f'inline; filename="{mf.original_name or mf.file.name}"'
+        return response
+
+    # それ以外：従来通り（必要なら attachment にしてもOK）
+    return FileResponse(mf.file.open("rb"))

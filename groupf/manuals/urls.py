@@ -22,4 +22,5 @@ urlpatterns = [
     path('<int:pk>/', views.manual_detail_view, name='manual_detail_view_alias'), # Alias
     path("<int:pk>/files/upload/", views.manual_files_upload, name="manual_files_upload"),
     path("files/<int:file_id>/view/", views.manual_file_view, name="manual_file_view"),
+    path('download_zip/<int:pk>/', views.manual_download_zip, name='manual_download_zip'),
 ]

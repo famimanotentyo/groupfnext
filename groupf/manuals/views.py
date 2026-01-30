@@ -4,9 +4,14 @@ from django.contrib import messages
 from django.utils import timezone
 from django.http import FileResponse, Http404
 from .models import Manual, ViewingHistory, ManualStatusMaster, ManualFile
+from django.db.models import Q
 from notifications.models import Notification, NotificationTypeMaster
 from .forms import ManualCreateForm, ManualFileUploadForm
 import os
+import mimetypes
+import zipfile
+import io
+
 
 
 @login_required
@@ -19,27 +24,26 @@ def manual_list(request):
     active_tab = request.GET.get('tab', 'all') 
     
     if active_tab == 'recent':
-        histories = ViewingHistory.objects.filter(user=request.user).select_related('manual')
+        histories = ViewingHistory.objects.filter(user=request.user).select_related('manual', 'manual__created_by', 'manual__status')
         manuals = [h.manual for h in histories if not h.manual.is_deleted]
         
     elif active_tab == 'bookmark':
-        manuals = request.user.bookmarked_manuals.filter(is_deleted=False)
+        manuals = request.user.bookmarked_manuals.filter(is_deleted=False).select_related('created_by', 'status').prefetch_related('files')
         
     else:
-        # 承認済みマニュアル + 自分が作成した承認待ちマニュアル
+        # 承認済みマニュアル + 自分が作成した承認待ちマニュアル（却下は除く）
         try:
             approved_status = ManualStatusMaster.objects.get(code='approved')
+            
+            # 承認済み OR (自分の作成 かつ 削除されていない かつ 却下されていない)
             manuals = Manual.objects.filter(
-                status=approved_status,
-                is_deleted=False
-            ) | Manual.objects.filter(
-                created_by=request.user,
-                is_deleted=False
-            )
-            manuals = manuals.distinct()
+                Q(status=approved_status, is_deleted=False) |
+                (Q(created_by=request.user, is_deleted=False) & ~Q(status__code='rejected'))
+            ).distinct().select_related('created_by', 'status').prefetch_related('files')
+            
         except ManualStatusMaster.DoesNotExist:
-            # ステータスマスタがない場合は全て表示
-            manuals = Manual.objects.filter(is_deleted=False)
+                # ステータスマスタがない場合は全て表示
+                manuals = Manual.objects.filter(is_deleted=False)
 
     context = {
         'manuals': manuals,
@@ -99,15 +103,22 @@ def manual_file_view(request, file_id):
     except ManualFile.DoesNotExist:
         raise Http404("file not found")
 
-    # PDFならinlineで返す（iframe表示できる）
-    if (mf.file.name or "").lower().endswith(".pdf"):
+    name = (mf.file.name or "").lower()
+
+    # PDF：iframe用に inline
+    if name.endswith(".pdf"):
         response = FileResponse(mf.file.open("rb"), content_type="application/pdf")
-        # 日本語ファイル名対応のため、filename* を使うのがモダンだが簡易的に original_name を使う
-        # 必要に応じて URL エンコードなど検討
         response["Content-Disposition"] = f'inline; filename="{mf.original_name or mf.file.name}"'
         return response
 
-    # PDF以外は通常のURLでOK（開くリンクは別でもよい）
+    # 画像だけ：img表示できるように content_type を付けて inline にする
+    if name.endswith((".png", ".jpg", ".jpeg")):
+        ctype, _ = mimetypes.guess_type(name)
+        response = FileResponse(mf.file.open("rb"), content_type=ctype or "image/jpeg")
+        response["Content-Disposition"] = f'inline; filename="{mf.original_name or mf.file.name}"'
+        return response
+
+    # それ以外：従来通り（必要なら attachment にしてもOK）
     return FileResponse(mf.file.open("rb"))
 
 
@@ -299,3 +310,49 @@ def manual_pending_list_view(request):
 @login_required
 def manual_detail_view(request, pk):
     return manual_detail(request, pk)
+
+
+@login_required
+def manual_download_zip(request, pk):
+    """
+    マニュアルに関連するファイルをまとめてZIPでダウンロード
+    """
+    manual = get_object_or_404(Manual, pk=pk)
+    
+    # ZIPファイルを作成するメモリバッファ
+    buffer = io.BytesIO()
+    
+    with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as z:
+        # メインファイル
+        if manual.file:
+            try:
+                file_path = manual.file.path
+                if os.path.exists(file_path):
+                    filename = os.path.basename(manual.file.name)
+                    z.write(file_path, filename)
+            except Exception:
+                pass # ファイルが見つからない場合はスキップ
+
+        # 添付ファイル
+        for mf in manual.files.all():
+            if mf.file:
+                try:
+                    file_path = mf.file.path
+                    if os.path.exists(file_path):
+                        # ファイル名 (オリジナル名優先、なければファイル名)
+                        filename = mf.original_name or os.path.basename(mf.file.name)
+                        # 同じ名前のファイルがZIP内にあると上書き等の問題が出るため、
+                        # 簡易的にIDを付与してユニークにする
+                        base, ext = os.path.splitext(filename)
+                        filename = f"{base}_{mf.id}{ext}"
+                        
+                        z.write(file_path, filename)
+                except Exception:
+                    pass
+
+    buffer.seek(0)
+    
+    # ダウンロードファイル名
+    zip_filename = f"{manual.title}.zip"
+    
+    return FileResponse(buffer, as_attachment=True, filename=zip_filename)
