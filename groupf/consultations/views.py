@@ -9,6 +9,7 @@ from django.conf import settings
 
 from .models import Consultation, ConsultationMessage, ConsultationStatusMaster, Question
 from manuals.models import Manual
+from notifications.models import Notification, NotificationTypeMaster
 from .forms import ConsultationCreateForm, ConsultationMessageForm
 
 # Gemini config (if needed here, though logic is in resolve)
@@ -114,6 +115,27 @@ def consultation_detail_view(request, pk):
             # 相談の更新日時を更新（一覧で上に上げるため）
             consultation.updated_at = timezone.now()
             consultation.save()
+            
+            # --- 通知の作成 ---
+            # メッセージ送信者が requester なら recipient は respondent (逆も然り)
+            recipient = consultation.respondent if request.user == consultation.requester else consultation.requester
+            
+            # 自分への通知は不要なので、相手に送る
+            if recipient != request.user:
+                # 通知タイプの取得・作成
+                notif_type, _ = NotificationTypeMaster.objects.get_or_create(
+                    code='consultation_message',
+                    defaults={'name': '相談メッセージ'}
+                )
+                
+                Notification.objects.create(
+                    recipient=recipient,
+                    title='相談メッセージ',
+                    message=f'{request.user.last_name}さんから相談メッセージが届きました。確認してみましょう',
+                    notification_type=notif_type,
+                    related_object_id=consultation.id,
+                    link_url=f"/consultations/{consultation.id}/" # 本当は reverseを使うべきだが簡易実装
+                )
             
             return redirect('consultation_detail_view', pk=pk)
     else:

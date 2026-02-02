@@ -178,7 +178,8 @@
                      data-type="{{ notification.notification_type.code }}"
                      data-typename="{{ notification.notification_type.name }}"
                      data-message="{{ notification.message }}"
-                     data-link="{{ notification.link_url|default:'' }}">
+                     data-link="{{ notification.link_url|default:'' }}"
+                     data-linktext="{% if notification.notification_type.code == 'consultation_message' %}メッセージを確認する{% else %}確認する{% endif %}">
                     
                     <div class="item-flex">
                         <div class="icon-box {% if notification.notification_type.code == 'interview_invite' %}icon-interview{% elif notification.notification_type.code == 'info' %}icon-info{% else %}icon-default{% endif %}">
@@ -249,6 +250,7 @@
         const typeName = element.dataset.typename;
         const message = element.dataset.message;
         const link = element.dataset.link;
+        const linkText = element.dataset.linktext || '確認する';
         // const notifId = element.dataset.id; // 将来的に既読APIを叩くなら使う
 
         // 詳細エリアへのセット
@@ -260,6 +262,7 @@
         const linkBtn = document.getElementById('detailLinkBtn');
         if (link) {
             linkBtn.href = link;
+            linkBtn.innerHTML = `<i class="fas fa-external-link-alt me-2"></i>${linkText}`;
             linkBtn.style.display = 'inline-flex';
         } else {
             linkBtn.style.display = 'none';
