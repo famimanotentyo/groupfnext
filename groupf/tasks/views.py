@@ -99,7 +99,7 @@ def top_page(request):
     # --- ダッシュボードデータ構築 (全員共通) ---
     dashboard_data = []
     
-    # ★ 全体チャート用の集計変数
+    # ★ 全体チャート用の集計変数（修正版）
     overall_stats = {
         'own': {'0-3日': 0, '4-7日': 0, '8日以上': 0},
         'request': {'0-3日': 0, '4-7日': 0, '8日以上': 0}
@@ -115,6 +115,26 @@ def top_page(request):
         elif diff <= 7: return '4-7日'
         else: return '8日以上'
 
+    # --- 修正: 全体集計をメンバー単位ではなくタスク単位（重複排除）で行う ---
+    # まず対象メンバーたちが抱えているタスクを全て取得し、重複を除外
+    active_tasks_unique = Task.objects.filter(assigned_users__in=members).exclude(status__code='completed').distinct()
+
+    for task in active_tasks_unique:
+        cat = get_deadline_category(task.due_date)
+        
+        # タスクタイプで判定 (request=依頼, self=自作)
+        # もしタスクタイプがない場合(NULL)は self 扱いにする等の考慮が必要
+        is_request = False
+        if task.task_type and task.task_type.code == 'request':
+            is_request = True
+        
+        if is_request:
+            overall_stats['request'][cat] += 1
+        else:
+            overall_stats['own'][cat] += 1
+
+    # -----------------------------------------------------------
+
     for member in members:
         # スキル: 完了済みタスクのタグ上位3つを取得
         skills = [tag.name for tag in member.get_completed_tags()][:3]
@@ -128,17 +148,13 @@ def top_page(request):
         difficulty_counts = {'high': 0, 'mid': 0, 'low': 0}
 
         for task in active_tasks:
-            # 期限集計用
-            cat = get_deadline_category(task.due_date)
-            
+            # メンバー個別はそのまま（その人が抱えているもの）
             deadline_str = task.due_date.strftime('%Y-%m-%d') if task.due_date else ''
             
             if task.requested_by and task.requested_by != member:
                 request_tasks.append({'deadline': deadline_str})
-                overall_stats['request'][cat] += 1 # 全体集計加算
             else:
                 own_tasks.append({'deadline': deadline_str})
-                overall_stats['own'][cat] += 1 # 全体集計加算
 
             task_tags = [t.name for t in task.tags.all()]
             is_high = any('難易度高' in t or '高' in t for t in task_tags if '難易度' in t)
