@@ -26,7 +26,9 @@
     <div class="header-controls">
         {% comment %} <a href="#"><i class="fas fa-ellipsis-h"></i></a> {% endcomment %}
         {% comment %} <a href="#"><i class="fas fa-plus"></i></a> {% endcomment %}
-        <a href="#"><i class="fas fa-search icon-circle"></i></a>
+        {% if user.role.code == 'admin' or user.role.code == 'manager' %}
+            <a href="{% url 'account_list_page' %}"><i class="fas fa-search icon-circle"></i></a>
+        {% endif %}
         <a href="{% url 'account_detail_page' %}">
             {# ★ここを修正: 画像があればimg、なければicon #}
             {% if user.avatar %}
