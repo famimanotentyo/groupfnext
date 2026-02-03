@@ -1,24 +1,54 @@
 {% extends 'base.html' %}
 {% block content %}
-    <div class="container" style="padding: 20px;">
-        <a href="{% url 'manual_delete_select_list' %}" style="padding: 10px; border: 1px solid #ccc; text-decoration: none; display: inline-block; margin-bottom: 20px;">
-            &lt; 戻る
-        </a>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> 削除確認</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i> 以下のマニュアルを本当に削除しますか？<br>
+                        この操作は元に戻せない場合があります。
+                    </div>
 
-        <div style="border: 1px solid #ccc; padding: 20px; max-width: 600px; margin: auto;">
-            <p><strong>タイトル：</strong>{{ manual.title }}</p>
-            <p><strong>作成日　：</strong>{{ manual.created_at|date:"Y/m/d" }}</p>
-            <p><strong>作成者　：</strong>{{ manual.author.username }}</p>
-            <p><strong>詳細　　：</strong>{{ manual.content|linebreaksbr }}</p>
-        </div>
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th class="table-light" style="width: 30%">タイトル</th>
+                                <td>{{ manual.title }}</td>
+                            </tr>
+                            <tr>
+                                <th class="table-light">作成者</th>
+                                <td>{{ manual.created_by }}</td>
+                            </tr>
+                            <tr>
+                                <th class="table-light">作成日</th>
+                                <td>{{ manual.created_at|date:"Y/m/d H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="table-light">現在のステータス</th>
+                                <td>{{ manual.status.name }}</td>
+                            </tr>
+                            <tr>
+                                <th class="table-light">説明</th>
+                                <td>{{ manual.description|linebreaksbr }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-        <div style="text-align: center; margin-top: 30px;">
-            <a href="{% url 'manual_delete_execute' manual.pk %}" style="padding: 15px 30px; border: 1px solid #ccc; text-decoration: none; color: #c00; font-weight: bold;">
-                選択したマニュアルを削除する
-            </a>
-            <a href="{% url 'manual_delete_select_list' %}" style="padding: 15px 30px; border: 1px solid #ccc; text-decoration: none; margin-left: 20px;">
-                キャンセル
-            </a>
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'manual_delete_select_list' %}" class="btn btn-secondary">
+                            キャンセル
+                        </a>
+                        <a href="{% url 'manual_delete_execute' manual.pk %}" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> 削除を実行する
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 {% endblock %}

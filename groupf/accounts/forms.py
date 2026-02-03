@@ -57,13 +57,19 @@ class AccountAdminEditForm(forms.ModelForm):
             'birth_date': forms.DateInput(attrs={'type': 'date'}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if name == 'is_active':
                 field.widget.attrs['class'] = 'form-check-input' # Checkbox style
             else:
                 field.widget.attrs['class'] = 'form-control'
+        
+        # マネージャーの場合は「役割・権限」を変更不可にする
+        if user and user.role.code == 'manager':
+            self.fields['role'].disabled = True
+            self.fields['department'].disabled = True
+            self.fields['is_active'].disabled = True
 
 from django.contrib.auth.forms import AuthenticationForm
 

@@ -351,13 +351,13 @@ def account_edit_page(request, pk):
              messages.error(request, 'このユーザーを編集する権限がありません。')
              return redirect('account_edit_page', pk=pk)
 
-        form = AccountAdminEditForm(request.POST, instance=target_user)
+        form = AccountAdminEditForm(request.POST, instance=target_user, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, f'{target_user.last_name} {target_user.first_name} さんの情報を更新しました。')
             return redirect('account_list_page')
     else:
-        form = AccountAdminEditForm(instance=target_user)
+        form = AccountAdminEditForm(instance=target_user, user=request.user)
 
     context = {
         'page_title': 'アカウント編集',

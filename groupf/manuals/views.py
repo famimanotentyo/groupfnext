@@ -94,6 +94,23 @@ def manual_files_upload(request, pk):
         )
 
     messages.success(request, f"{len(files)} 件アップロードしました。")
+
+    # 追記: マネージャー以外（部下）がファイルを投稿した場合は「承認待ち」に戻す
+    # 権限がない(None)場合も部下とみなして承認待ちにする
+    is_manager_or_admin = request.user.role and request.user.role.code in ['manager', 'admin']
+    if not is_manager_or_admin:
+        try:
+            pending_status = ManualStatusMaster.objects.get(code='pending')
+            # 既に pending なら変更不要だが、approved などの場合は pending に戻す
+            if manual.status != pending_status:
+                manual.status = pending_status
+                manual.approved_by = None
+                manual.approved_at = None
+                manual.save()
+                messages.info(request, "ファイルを投稿したため、ステータスが「承認待ち」に変更されました。")
+        except ManualStatusMaster.DoesNotExist:
+            pass # マスタ未設定時は何もしない（あるいはログ出すなど）
+
     return redirect("manual_detail", pk=manual.pk)
 
 @login_required
@@ -267,15 +284,69 @@ def manual_create_view(request):
 # Placeholders for missing views from original urls
 @login_required
 def manual_delete_select_list(request):
-    return render(request, 'manual/manual_list.html')
+    """
+    削除対象マニュアル選択画面
+    - マネージャー以上：全マニュアル
+    - 一般社員：アクセス不可（リダイレクト）
+    """
+    # 権限チェック (Admin or Manager Only)
+    if not (request.user.role and request.user.role.code in ['admin', 'manager']):
+        messages.error(request, 'この機能はマネージャー以上の権限が必要です。')
+        return redirect('manual_list')
+
+    query = request.GET.get('q')
+
+    # 全マニュアルを取得
+    manuals = Manual.objects.filter(is_deleted=False)
+
+    # 検索フィルタ
+    if query:
+        manuals = manuals.filter(title__icontains=query)
+
+    manuals = manuals.select_related('created_by').order_by('-created_at')
+
+    context = {
+        'manuals': manuals,
+        'page_title': '削除するマニュアルを選択',
+    }
+    return render(request, 'manual/manual_delete_select_list.html', context)
 
 @login_required
 def manual_delete_preview(request, pk):
-    return redirect('manual_list')
+    """
+    削除確認画面
+    """
+    # 権限チェック
+    if not (request.user.role and request.user.role.code in ['admin', 'manager']):
+        messages.error(request, 'この機能はマネージャー以上の権限が必要です。')
+        return redirect('manual_list')
+
+    manual = get_object_or_404(Manual, pk=pk)
+    
+    context = {
+        'manual': manual,
+        'page_title': 'マニュアル削除確認',
+    }
+    return render(request, 'manual/manual_delete_preview.html', context)
 
 @login_required
 def manual_delete_execute(request, pk):
-    return redirect('manual_list')
+    """
+    削除実行処理（論理削除）
+    """
+    # 権限チェック
+    if not (request.user.role and request.user.role.code in ['admin', 'manager']):
+        messages.error(request, 'この機能はマネージャー以上の権限が必要です。')
+        return redirect('manual_list')
+
+    manual = get_object_or_404(Manual, pk=pk)
+    
+    # 論理削除
+    manual.is_deleted = True
+    manual.save()
+    
+    messages.warning(request, f'マニュアル「{manual.title}」を削除しました。')
+    return redirect('manual_delete_select_list')
 
 @login_required
 def manual_list_view(request):
