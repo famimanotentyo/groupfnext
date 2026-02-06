@@ -24,6 +24,35 @@
         </div>
     </div>
 
+    {# --- ナレッジ(解決結果)の表示エリア --- #}
+    {% if consultation.question %}
+    <div class="card mb-4 border-info shadow-sm">
+        <div class="card-header bg-info text-dark fw-bold">
+            <i class="fas fa-lightbulb me-2"></i>AIによる解決サマリー (ナレッジ)
+        </div>
+        <div class="card-body bg-white">
+            <h5 class="card-title text-primary fw-bold mb-3">
+                <i class="fas fa-heading me-2"></i>{{ consultation.question.title }}
+            </h5>
+            
+            <div class="mb-3">
+                <h6 class="fw-bold border-bottom pb-1"><i class="fas fa-exclamation-circle me-2"></i>課題・質問内容</h6>
+                <div class="p-3 bg-light rounded text-dark">
+                    {{ consultation.question.problem_summary|linebreaksbr }}
+                </div>
+            </div>
+
+            <div>
+                <h6 class="fw-bold border-bottom pb-1"><i class="fas fa-check-circle me-2"></i>解決策・対応手順</h6>
+                <div class="p-3 bg-light rounded text-dark">
+                    {{ consultation.question.solution_summary|linebreaksbr }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {# ----------------------------------- #}
+
     <div class="card shadow-sm mb-4">
         <div class="card-body bg-light" style="height: 500px; overflow-y: auto;" id="chat-box">
             {% for msg in messages_list %}

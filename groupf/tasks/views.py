@@ -7,7 +7,8 @@ from django.contrib import messages
 from django.views.decorators.http import require_POST
 import json
 from datetime import datetime, timedelta
-import google.generativeai as genai
+from openai import OpenAI
+import os
 from django.conf import settings
 
 from .models import Task, Tag, TaskStatusMaster, TaskTypeMaster
@@ -389,9 +390,7 @@ def task_board_page(request):
     
     return render(request, 'tasks/task_board.html', context)
 
-# Gemini configuration
-genai.configure(api_key=settings.GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash') # Updated model name as per user code
+# OpenAI configuration
 TAG_GENERATION_PROMPT_TEMPLATE = """
 以下のタスク名から、ハッシュタグ形式で20個以内の関連タグを生成してください。
 タグには必ず #難易度 (高、中、低) のいずれか一つを含めてください。
@@ -405,11 +404,20 @@ TAG_GENERATION_PROMPT_TEMPLATE = """
 
 def generate_tags_with_gemini(task_title):
     try:
-        prompt = TAG_GENERATION_PROMPT_TEMPLATE.format(task_title=task_title)
-        response = model.generate_content(prompt)
-        return response.text
+        if settings.OPENAI_API_KEY:
+            client = OpenAI(api_key=settings.OPENAI_API_KEY)
+            prompt = TAG_GENERATION_PROMPT_TEMPLATE.format(task_title=task_title)
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant that generates hashtags."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            return response.choices[0].message.content
+        return ""
     except Exception as e:
-        # print(f"Gemini API Error: {e}") 
+        # print(f"OpenAI API Error: {e}") 
         return ""
 
 @login_required

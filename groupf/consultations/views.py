@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.contrib import messages
 from django.db.models import Q
 import json
-import google.generativeai as genai
+
 from django.conf import settings
 
 from .models import Consultation, ConsultationMessage, ConsultationStatusMaster, Question
@@ -13,8 +13,8 @@ from notifications.models import Notification, NotificationTypeMaster
 from .forms import ConsultationCreateForm, ConsultationMessageForm
 
 # Gemini config (if needed here, though logic is in resolve)
-genai.configure(api_key=settings.GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.5-flash')
+from openai import OpenAI
+import os
 
 @login_required
 def consultation_list_view(request):
@@ -175,32 +175,51 @@ def consultation_resolve(request, pk):
         for msg in consultation.messages.all().order_by('created_at'):
             chat_history += f"[{msg.sender.last_name}]: {msg.content}\n"
 
-        # 3. Geminiによる要約生成 (APIキーがある場合のみ)
+        # 3. OpenAIによる要約生成 (APIキーがある場合のみ)
         ai_data = {}
         ai_success = False
 
-        if settings.GEMINI_API_KEY:
+        if settings.OPENAI_API_KEY:
             try:
+                client = OpenAI(api_key=settings.OPENAI_API_KEY)
+                
                 # プロンプトの作成
                 prompt = f"""
+                あなたは親切で丁寧な社内ナレッジ管理者です。
                 以下の社内チャットの履歴を読み、他の社員にも役立つ「ナレッジ」として整理してください。
+                
+                【重要】
+                - 誰にでもわかる、優しく丁寧な言葉遣い（です・ます調）で書いてください。
+                - 専門用語には簡単な解説を加えるなど、初心者にも配慮してください。
+                - 読む人が「なるほど！」と安心できるようなトーンでお願いします。
+
+                【判定について】
+                チャットの内容から、最終的に「解決した」か「解決しなかった（「わからない」「解決できず」などで終わっている）」かを判断してください。
+
                 出力は以下のJSON形式のみで行ってください。
                 
                 {{
-                    "title": "簡潔で分かりやすいタイトル(30文字以内)",
-                    "problem": "どのような課題や質問だったか(要約)",
-                    "solution": "最終的にどうやって解決したか(具体的な手順や回答)"
+                    "title": "一目で内容がわかる、親しみやすいタイトル(30文字以内)",
+                    "problem": "どのようなことで困っていたか（優しく要約）",
+                    "solution": "どのように解決したか（手順などを分かりやすく、ステップ形式などで）",
+                    "is_solved": true または false (解決していない場合は false)
                 }}
 
                 --- チャット履歴 ---
                 {chat_history}
                 """
                 
-                response = model.generate_content(prompt)
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant that summarizes chat history into knowledge base entries. You always output valid JSON."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    response_format={"type": "json_object"}
+                )
                 
-                # JSONパース（GeminiがMarkdownコードブロックをつける場合があるので除去）
+                raw_text = response.choices[0].message.content
                 import json
-                raw_text = response.text.replace('```json', '').replace('```', '').strip()
                 ai_data = json.loads(raw_text)
                 ai_success = True
 
@@ -209,33 +228,39 @@ def consultation_resolve(request, pk):
                 # 失敗時は空の辞書または失敗メッセージを入れる（後続でデフォルト値が入る）
         
         else:
-            print("Gemini API Key is missing. Skipping AI summary.")
+            print("OpenAI API Key is missing. Skipping AI summary.")
         
         # 4. Question(ナレッジ)モデルへの保存
         # APIキーがない、または失敗した場合は「要約失敗/手動修正待ち」として保存する
         
-        title = ai_data.get('title', consultation.title)
+        # AIが「解決していない」と判断した場合はナレッジを作成しない
+        is_solved = ai_data.get('is_solved', True) # キーがない場合はTrue扱いにする（後方互換）ただしAPI成功時のみ有効
         
-        if ai_success:
-            problem = ai_data.get('problem', '自動生成失敗')
-            solution = ai_data.get('solution', '自動生成失敗')
-            msg_text = '相談を解決しました。AIが会話を要約し、ナレッジベースに登録しました！'
-            msg_level = messages.SUCCESS
+        if ai_success and not is_solved:
+             messages.warning(request, '相談を終了しました。（解決に至らなかったと判断されたため、ナレッジ化はスキップしました）')
         else:
-            problem = "【自動要約失敗】\nAPIキーが設定されていないか、AI処理中にエラーが発生しました。\nここを手動で編集して、課題内容を記述してください。"
-            solution = "【解決策未記入】\nここを手動で編集して、解決手順を記述してください。"
-            msg_text = '相談を解決しました。（AI要約はスキップされました。ナレッジの内容を手動で修正してください）'
-            msg_level = messages.WARNING
+            title = ai_data.get('title', consultation.title)
+            
+            if ai_success:
+                problem = ai_data.get('problem', '自動生成失敗')
+                solution = ai_data.get('solution', '自動生成失敗')
+                msg_text = '相談を解決しました。AIが会話を要約し、ナレッジベースに登録しました！'
+                msg_level = messages.SUCCESS
+            else:
+                problem = "【自動要約失敗】\nAPIキーが設定されていないか、AI処理中にエラーが発生しました。\nここを手動で編集して、課題内容を記述してください。"
+                solution = "【解決策未記入】\nここを手動で編集して、解決手順を記述してください。"
+                msg_text = '相談を解決しました。（AI要約はスキップされました。ナレッジの内容を手動で修正してください）'
+                msg_level = messages.WARNING
 
-        Question.objects.create(
-            source_consultation=consultation,
-            title=title,
-            problem_summary=problem,
-            solution_summary=solution,
-            created_by=request.user
-        )
-        
-        messages.add_message(request, msg_level, msg_text)
+            Question.objects.create(
+                source_consultation=consultation,
+                title=title,
+                problem_summary=problem,
+                solution_summary=solution,
+                created_by=request.user
+            )
+            
+            messages.add_message(request, msg_level, msg_text)
 
         return redirect('consultation_list_view')
 

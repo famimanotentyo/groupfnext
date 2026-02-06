@@ -5,14 +5,13 @@ from django.conf import settings
 from .models import Interview, InterviewStatusMaster, InterviewFeedback, MemberAnalysis
 from accounts.models import User
 from django.db.models import Q
-import google.generativeai as genai
+
 import json
 import datetime
 from django.utils import timezone
 
-# Gemini設定
-if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
+from openai import OpenAI
+import os
 
 @login_required
 def interview_home(request):
@@ -221,10 +220,16 @@ def interview_create(request):
 
         script = "AI生成に失敗しました。"
         try:
-            if settings.GEMINI_API_KEY:
-                model = genai.GenerativeModel('gemini-2.0-flash')
-                response = model.generate_content(prompt)
-                script = response.text
+            if settings.OPENAI_API_KEY:
+                client = OpenAI(api_key=settings.OPENAI_API_KEY)
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[
+                        {"role": "system", "content": "あなたは優秀なマネジメントコーチです。"},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+                script = response.choices[0].message.content
             else:
                 script = "APIキーが設定されていないため、デモ用のテキストを表示します。\n（APIキーを設定するとここにAI生成テキストが表示されます）"
         except Exception as e:
@@ -413,11 +418,19 @@ def interview_feedback(request, pk):
         
         new_analysis = current_analysis
         ai_log = ""
+        new_analysis = current_analysis
+        ai_log = ""
         try:
-            if settings.GEMINI_API_KEY:
-                model = genai.GenerativeModel('gemini-2.0-flash')
-                response = model.generate_content(prompt)
-                new_analysis = response.text
+            if settings.OPENAI_API_KEY:
+                client = OpenAI(api_key=settings.OPENAI_API_KEY)
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[
+                        {"role": "system", "content": "あなたは優秀なマネジメントコーチです。"},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+                new_analysis = response.choices[0].message.content
                 ai_log = "AI Analysis Success"
             else:
                 ai_log = "No API Key"
