@@ -600,6 +600,7 @@ def interview_advice_menu_page(request):
 def admin_csv_import_page(request):
     import csv
     from io import TextIOWrapper
+    from django.core.mail import send_mail
     from accounts.models import User, RoleMaster
     from django.contrib.auth.tokens import default_token_generator
     from django.utils.http import urlsafe_base64_encode
@@ -676,6 +677,20 @@ def admin_csv_import_page(request):
                         full_url = request.build_absolute_uri(reset_path)
                         print(f"[{emp_num}] {lname} {fname}: {full_url}")
 
+                        # メール送信
+                        subject = "アカウント作成のお知らせ"
+                        message = f"""
+{lname} {fname} 様
+
+アカウントが作成されました。
+以下のリンクからパスワードを設定し、初回ログインを行ってください。
+
+{full_url}
+
+※このリンクは一度きり有効です。
+"""
+                        send_mail(subject, message, None, [user.email])
+
                     except Exception as e:
                         print(f"Line {i+1} Error: {e}")
                         error_count += 1
@@ -683,7 +698,7 @@ def admin_csv_import_page(request):
                 print("================================")
 
                 if created_count > 0:
-                    messages.success(request, f"{created_count}件のアカウントを作成しました。ターミナルにログイン用URLを出力しました。")
+                    messages.success(request, f"{created_count}件のアカウントを作成し、招待メールを送信しました。")
                 
                 if error_count > 0:
                     messages.warning(request, f"{error_count}件のデータは登録できませんでした（重複など）。")
