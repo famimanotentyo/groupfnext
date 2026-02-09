@@ -11,6 +11,7 @@ from .models import User
 from .forms import ProfileEditForm, LoginForm, AccountAdminEditForm, PasswordResetRequestForm
 from tasks.models import Task
 from notifications.models import Notification, NotificationTypeMaster
+from django.core.mail import send_mail
 
 #********************************************************#
 #ログインの一連の流れを管理するクラス
@@ -404,14 +405,20 @@ def trigger_password_reset(request, pk):
         reset_path = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
         full_url = request.build_absolute_uri(reset_path)
 
-        # ログ出力（メール送信シミュレーション）
-        print("="*60)
-        print(f"[Password Reset Trigger]")
-        print(f"User: {target_user.last_name} {target_user.first_name} ({target_user.email})")
-        print(f"Reset URL: {full_url}")
-        print("="*60)
+        # メール送信
+        subject = "パスワードリセットのお知らせ"
+        message = f"""
+{target_user.last_name} {target_user.first_name} 様
 
-        messages.success(request, f'{target_user.last_name} さんのパスワードリセットURLを発行しました（ターミナルを確認してください）。')
+以下のリンクからパスワードの再設定を行ってください。
+
+{full_url}
+
+※このリンクは一度きり有効です。
+"""
+        send_mail(subject, message, None, [target_user.email])
+
+        messages.success(request, f'{target_user.last_name} さんへパスワードリセットメールを送信しました。')
 
     except Exception as e:
         messages.error(request, f'エラーが発生しました: {e}')
