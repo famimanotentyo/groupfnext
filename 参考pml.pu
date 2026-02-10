@@ -1,115 +1,276 @@
-@startuml BBショップクラス図
-    class "顧客"{
-        - 顧客ID: int
-        - 氏名カタカナ: string
-        - 住所: string
-        - 電話番号: string
-        - メールアドレス: string
+@startuml タスカル
+skinparam defaultFontName "Meiryo"
 
-        + 登録(): void
-        + 更新(): void
-        + 削除(): void
-    }
+class "ユーザー" {
+  - ID: BigAuto
+  - パスワード: Varchar
+  - 最終ログイン: DateTime
+  - スーパーユーザー権限: Boolean
+  - 社員番号: Varchar
+  - 姓: Varchar
+  - 名: Varchar
+  - セイ: Varchar
+  - メイ: Varchar
+  - メールアドレス: Varchar
+  - 電話番号: Varchar
+  - アイコン画像: Image
+  - 所属グループ: Fk
+  - 権限: Fk
+  - 生年月日: Date
+  - 入社日: Date
+  - 登録日: DateTime
+  - 初回設定完了: Boolean
+  - 仮パスワード有効期限: DateTime
+  - 有効: Boolean
+  - 管理サイトアクセス権限: Boolean
+  - グループ: ManyToManyField
+  - ユーザーパーミッション: ManyToManyField
+}
 
-    class "注文内容"{
-        - 注文番号: int
-        - 顧客番号: Fk
-        - 注文日: date
-        - 合計金額: float
-        - 仕入れ先番号: Fk
+class "部署" {
+  - ID: BigAuto
+  - グループ名(部署名): Varchar
+  - 説明: Text
+}
 
-        + 登録(): void
-        + 削除(): void
-    }
+class "役割マスタ" {
+  - ID: BigAuto
+  - 役割コード: Varchar
+  - 役割名: Varchar
+}
 
-    class "注文履歴"{
-        - 注文履歴番号: int
-        - 顧客ID: Fk
-        - 注文ID: Fk
-        - 注文日: date
-        - 合計金額: float
+class "タスク状態マスタ" {
+  - ID: BigAuto
+  - 状態コード: Varchar
+  - 状態名: Varchar
+  - 表示順: Integer
+}
 
-        + 表示(): void
-    }
+class "タスク種別マスタ" {
+  - ID: BigAuto
+  - 種別コード: Varchar
+  - 種別名: Varchar
+}
 
-    class "商品"{
-        - 商品番号: int
-        - 商品名: string
-        - 画像: Fk
-        - カテゴリ: Fk
-        - 詳細: string
-        - 価格: float
+class "タグ" {
+  - ID: BigAuto
+  - タグ名: Varchar
+}
 
-        + 登録(): void
-        + 更新(): void
-        + 削除(): void
-    }
+class "タスク" {
+  - ID: BigAuto
+  - タスク名: Varchar
+  - 期限: DateTime
+  - タスク状態: Fk
+  - タスク種別: Fk
+  - 依頼者: Fk
+  - タスク備考欄: Text
+  - 作成日時: DateTime
+  - 更新日時: DateTime
+  - タグ: ManyToManyField
+  - 取り掛かり中の人: ManyToManyField
+  - 完了とした人: ManyToManyField
+}
 
-    class "画像"{
-        - 画像番号: int
-        - 商品番号: Fk
-        - 画像URL: string
+class "マニュアル状態マスタ" {
+  - ID: BigAuto
+  - 状態コード: Varchar
+  - 状態名: Varchar
+}
 
-        + 登録(): void
-        + 削除(): void
-    }
+class "マニュアル公開範囲マスタ" {
+  - ID: BigAuto
+  - 範囲コード: Varchar
+  - 範囲名: Varchar
+}
 
-    class "カテゴリ"{
-        - カテゴリ番号: int
-        - カテゴリ名: string
+class "マニュアル" {
+  - ID: BigAuto
+  - マニュアル名: Varchar
+  - 説明・備考: Text
+  - ファイル: File
+  - 状態: Fk
+  - 公開範囲: Fk
+  - 論理削除: Boolean
+  - 作成者: Fk
+  - 承認者: Fk
+  - 関連部署: Fk
+  - 作成日時: DateTime
+  - 承認日時: DateTime
+  - ブックマーク: ManyToManyField
+  - 権限: BigInt
+}
 
-        + 登録(): void
-        + 削除(): void
-    }
+class "閲覧履歴" {
+  - ID: BigAuto
+  - 閲覧ユーザー: Fk
+  - 閲覧マニュアル: Fk
+  - 最終閲覧日時: DateTime
+}
 
-    class "仕入先"{
-        - 仕入先番号: int
-        - 仕入先名: string
-        - 担当者名: string
-        - 事業者住所: string
-        - 担当者電話番号: string
+class "マニュアルファイル" {
+  - ID: BigAuto
+  - マニュアル: Fk
+  - ファイル: File
+  - フォルダ名: Varchar
+  - アップロード時刻: DateTime
+}
 
-        + 登録(): void
-        + 削除(): void
-    }
+class "相談状態マスタ" {
+  - ID: BigAuto
+  - 状態コード: Varchar
+  - 状態名: Varchar
+}
 
-    class "管理者"{
-        - 管理者番号: int
-        - 氏名: string
-        - パスワード: string
+class "相談" {
+  - ID: BigAuto
+  - 相談タイトル: Varchar
+  - 質問者: Fk
+  - 回答者: Fk
+  - 状態: Fk
+  - created at: DateTime
+  - updated at: DateTime
+}
 
-        + 登録(): void
-        + 削除(): void
-    }
+class "相談メッセージ" {
+  - ID: BigAuto
+  - 相談: Fk
+  - 差出人: Fk
+  - メッセージ内容: Text
+  - created at: DateTime
+}
 
-    class "カタログ"{
-        - カタログ番号: int
-        - カタログpdf番号: Fk
+class "ナレッジ(解決済質問)" {
+  - ID: BigAuto
+  - 元チャット: Fk
+  - 質問タイトル(要約): Varchar
+  - 課題・質問内容: Text
+  - 解決策・操作手順: Text
+  - 作成者: Fk
+  - created at: DateTime
+  - 関連タグ: ManyToManyField
+}
 
-        + 登録(): void
-        + 更新(): void
-        + 削除(): void
-    }
+class "スケジュール種別マスタ" {
+  - ID: BigAuto
+  - 種別コード: Varchar
+  - 種別名: Varchar
+}
 
-    class "カタログpdf"{
-        - カタログpdf番号: int
-        - カタログ番号: Fk
-        - pdfURL: string
+class "スケジュール" {
+  - ID: BigAuto
+  - ユーザー: Fk
+  - 予定タイトル: Varchar
+  - 詳細: Text
+  - 開始日時: DateTime
+  - 終了日時: DateTime
+  - 種類: Fk
+  - カテゴリ: Varchar
+  - 非公開: Boolean
+}
 
-        + 登録(): void
-        + 削除(): void
-    }
+class "面談状態マスタ" {
+  - ID: BigAuto
+  - 状態コード: Varchar
+  - 状態名: Varchar
+}
 
-    商品 "1..*" -- "1" 画像
-    商品 "1..*" -- "1..*" カテゴリ
-    カタログ "1" -- "1..*" カタログpdf
+class "面談" {
+  - ID: BigAuto
+  - 担当上司: Fk
+  - 対象部下: Fk
+  - 面談日時: DateTime
+  - 終了日時: DateTime
+  - 面談メモ: Text
+  - 状態: Fk
+  - 面談テーマ: Varchar
+  - 場所: Varchar
+  - AI生成スクリプト: Text
+}
 
-    注文内容 "1" -- "1..*" 仕入先
-    顧客 "1" -- "0..*" 注文履歴
-    商品 "1" -- "0..*" 注文内容
-    注文内容 "1" -- "1..*" 注文履歴
+class "面談フィードバック" {
+  - ID: BigAuto
+  - 対象面談: Fk
+  - 総合評価: Integer
+  - 反応タグ: JSONField
+  - 一言メモ: Text
+  - AI分析ログ: Text
+  - created at: DateTime
+}
 
-    管理者 "1..*" -- "1..*" 顧客
-    管理者 "1..*" -- "0..*" カタログ
+class "部下分析データ" {
+  - ID: BigAuto
+  - 対象部下: Fk
+  - AI分析テキスト（取説）: Text
+  - 最終更新日時: DateTime
+}
 
+class "通知タイプマスタ" {
+  - ID: BigAuto
+  - タイプコード: Varchar
+  - タイプ名: Varchar
+}
+
+class "通知" {
+  - ID: BigAuto
+  - 通知先: Fk
+  - タイトル: Varchar
+  - 本文: Text
+  - 通知タイプ: Fk
+  - 関連ID: Integer
+  - リンクURL: Varchar
+  - 既読: Boolean
+  - 通知日時: DateTime
+}
+
+class "チャットルーム" {
+  - ID: BigAuto
+  - ルーム名: Varchar
+  - 最終更新日時: DateTime
+  - 参加者: ManyToManyField
+}
+
+class "チャットメッセージ" {
+  - ID: BigAuto
+  - チャットルーム: Fk
+  - 差出人: Fk
+  - メッセージ内容: Text
+  - created at: DateTime
+}
+
+"スケジュール種別マスタ" "1" -- "0..*" "スケジュール"
+"タグ" "0..*" -- "0..*" "タスク"
+"タグ" "0..*" -- "0..*" "ナレッジ(解決済質問)"
+"タスク状態マスタ" "1" -- "0..*" "タスク"
+"タスク種別マスタ" "1" -- "0..*" "タスク"
+"チャットルーム" "1" -- "0..*" "チャットメッセージ"
+"マニュアル" "1" -- "0..*" "マニュアルファイル"
+"マニュアル" "1" -- "0..*" "閲覧履歴"
+"マニュアル公開範囲マスタ" "1" -- "0..*" "マニュアル"
+"マニュアル状態マスタ" "1" -- "0..*" "マニュアル"
+"ユーザー" "0..*" -- "0..*" "タスク"
+"ユーザー" "0..*" -- "0..*" "チャットルーム"
+"ユーザー" "0..*" -- "0..*" "マニュアル"
+"ユーザー" "1" -- "0..*" "スケジュール"
+"ユーザー" "1" -- "0..*" "タスク"
+"ユーザー" "1" -- "0..*" "チャットメッセージ"
+"ユーザー" "1" -- "0..*" "ナレッジ(解決済質問)"
+"ユーザー" "1" -- "0..*" "マニュアル"
+"ユーザー" "1" -- "0..*" "相談"
+"ユーザー" "1" -- "0..*" "相談メッセージ"
+"ユーザー" "1" -- "0..*" "通知"
+"ユーザー" "1" -- "0..*" "部下分析データ"
+"ユーザー" "1" -- "0..*" "閲覧履歴"
+"ユーザー" "1" -- "0..*" "面談"
+"役割マスタ" "1" -- "0..*" "ユーザー"
+"相談" "1" -- "0..*" "ナレッジ(解決済質問)"
+"相談" "1" -- "0..*" "相談メッセージ"
+"相談状態マスタ" "1" -- "0..*" "相談"
+"通知タイプマスタ" "1" -- "0..*" "通知"
+"部署" "0..*" -- "0..*" "ユーザー"
+"部署" "1" -- "0..*" "マニュアル"
+"部署" "1" -- "0..*" "ユーザー"
+"面談" "1" -- "0..*" "面談フィードバック"
+"面談状態マスタ" "1" -- "0..*" "面談"
 @enduml
+

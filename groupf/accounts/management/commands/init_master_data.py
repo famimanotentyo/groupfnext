@@ -1,6 +1,4 @@
 from django.core.management.base import BaseCommand
-from django.contrib.auth import get_user_model
-from datetime import date
 from accounts.models import RoleMaster, Department
 from tasks.models import TaskStatusMaster, TaskTypeMaster
 from manuals.models import ManualStatusMaster, ManualVisibilityMaster
@@ -9,10 +7,8 @@ from schedule.models import ScheduleEventTypeMaster
 from interviews.models import InterviewStatusMaster
 from notifications.models import NotificationTypeMaster
 
-User = get_user_model()
-
 class Command(BaseCommand):
-    help = 'Initializes master data and test users'
+    help = 'Initializes master data (Roles, Statuses, Types, Departments) for the application.'
 
     def handle(self, *args, **options):
         self.stdout.write("Creating Master Data...")
@@ -83,6 +79,7 @@ class Command(BaseCommand):
             {'code': 'tentative', 'name': '仮予約'},
             {'code': 'confirmed', 'name': '確定'},
             {'code': 'completed', 'name': '実施済み'},
+            {'code': 'declined', 'name': '却下・辞退'},
         ]
         for s in interview_statuses:
             InterviewStatusMaster.objects.get_or_create(code=s['code'], defaults={'name': s['name']})
@@ -93,6 +90,9 @@ class Command(BaseCommand):
             {'code': 'task_assign', 'name': 'タスクアサイン'},
             {'code': 'interview_invite', 'name': '面談依頼'},
             {'code': 'manual_approval', 'name': 'マニュアル承認依頼'},
+            {'code': 'manual_reject', 'name': 'マニュアル却下'},
+            {'code': 'interview_decline', 'name': '面談辞退'},
+            {'code': 'consultation_message', 'name': '相談メッセージ'},
         ]
         for t in notification_types:
             NotificationTypeMaster.objects.get_or_create(code=t['code'], defaults={'name': t['name']})
@@ -105,75 +105,4 @@ class Command(BaseCommand):
         for d in departments:
             Department.objects.get_or_create(name=d['name'], defaults={'description': d['description']})
 
-        self.stdout.write("Master Data Created.")
-
-        # Users
-        self.stdout.write("Creating Users...")
-        
-        # 部署を取得
-        dev_dept = Department.objects.get(name='開発部')
-        sales_dept = Department.objects.get(name='営業部')
-        
-        # 役割を取得
-        admin_role = RoleMaster.objects.get(code='admin')
-        manager_role = RoleMaster.objects.get(code='manager')
-        employee_role = RoleMaster.objects.get(code='employee')
-        
-        # 1. Admin User
-        if not User.objects.filter(employee_number='001').exists():
-            User.objects.create_superuser(
-                employee_number='001',
-                email='admin@example.com',
-                password='password123',
-                last_name='管理者',
-                first_name='太郎',
-                last_name_kana='カンリシャ',
-                first_name_kana='タロウ',
-                department=dev_dept,
-                role=admin_role,
-                hire_date=date(2020, 4, 1),
-                is_initial_setup_completed=True
-            )
-            self.stdout.write("Created Admin User: 001 / password123")
-        else:
-            self.stdout.write("Admin User exists.")
-
-        # 2. Manager User
-        if not User.objects.filter(employee_number='002').exists():
-            User.objects.create_user(
-                employee_number='002',
-                email='manager@example.com',
-                password='password123',
-                last_name='上司',
-                first_name='次郎',
-                last_name_kana='ジョウシ',
-                first_name_kana='ジロウ',
-                department=dev_dept,
-                role=manager_role,
-                hire_date=date(2021, 4, 1),
-                is_initial_setup_completed=True
-            )
-            self.stdout.write("Created Manager User: 002 / password123")
-        else:
-            self.stdout.write("Manager User exists.")
-
-        # 3. Employee User
-        if not User.objects.filter(employee_number='003').exists():
-            User.objects.create_user(
-                employee_number='003',
-                email='employee@example.com',
-                password='password123',
-                last_name='社員',
-                first_name='三郎',
-                last_name_kana='シャイン',
-                first_name_kana='サブロウ',
-                department=sales_dept,
-                role=employee_role,
-                hire_date=date(2022, 4, 1),
-                is_initial_setup_completed=True
-            )
-            self.stdout.write("Created Employee User: 003 / password123")
-        else:
-            self.stdout.write("Employee User exists.")
-            
-        self.stdout.write(self.style.SUCCESS("All Data Created Successfully."))
+        self.stdout.write(self.style.SUCCESS("All Master Data Created Successfully."))
