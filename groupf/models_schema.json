@@ -1,0 +1,1922 @@
+[
+  {
+    "app": "accounts",
+    "model": "RoleMaster",
+    "verbose_name": "役割マスタ",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "役割コード",
+        "physical_name": "code",
+        "type": "Varchar",
+        "length": 20,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "役割名",
+        "physical_name": "name",
+        "type": "Varchar",
+        "length": 50,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "accounts",
+    "model": "Department",
+    "verbose_name": "グループ",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "グループ名(部署名)",
+        "physical_name": "name",
+        "type": "Varchar",
+        "length": 50,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "説明",
+        "physical_name": "description",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "accounts",
+    "model": "User",
+    "verbose_name": "ユーザー",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "パスワード",
+        "physical_name": "password",
+        "type": "Varchar",
+        "length": 128,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "最終ログイン",
+        "physical_name": "last_login",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "",
+        "remarks": "Null可"
+      },
+      {
+        "logical_name": "スーパーユーザー権限",
+        "physical_name": "is_superuser",
+        "type": "Boolean",
+        "length": "-",
+        "default": "False",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "全ての権限を持っているとみなされます。"
+      },
+      {
+        "logical_name": "社員番号",
+        "physical_name": "employee_number",
+        "type": "Varchar",
+        "length": 20,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "例: 000-000-000"
+      },
+      {
+        "logical_name": "姓",
+        "physical_name": "last_name",
+        "type": "Varchar",
+        "length": 50,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "名",
+        "physical_name": "first_name",
+        "type": "Varchar",
+        "length": 50,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "セイ",
+        "physical_name": "last_name_kana",
+        "type": "Varchar",
+        "length": 50,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "メイ",
+        "physical_name": "first_name_kana",
+        "type": "Varchar",
+        "length": 50,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "メールアドレス",
+        "physical_name": "email",
+        "type": "Varchar",
+        "length": 254,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "電話番号",
+        "physical_name": "phone_number",
+        "type": "Varchar",
+        "length": 15,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "",
+        "remarks": "Null可"
+      },
+      {
+        "logical_name": "アイコン画像",
+        "physical_name": "avatar",
+        "type": "Image",
+        "length": 100,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "",
+        "remarks": "Null可"
+      },
+      {
+        "logical_name": "所属グループ",
+        "physical_name": "department_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "権限",
+        "physical_name": "role_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "生年月日",
+        "physical_name": "birth_date",
+        "type": "Date",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "",
+        "remarks": "Null可"
+      },
+      {
+        "logical_name": "入社日",
+        "physical_name": "hire_date",
+        "type": "Date",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "",
+        "remarks": "Null可"
+      },
+      {
+        "logical_name": "登録日",
+        "physical_name": "date_joined",
+        "type": "DateTime",
+        "length": "-",
+        "default": "timezone.now",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "初回設定完了",
+        "physical_name": "is_initial_setup_completed",
+        "type": "Boolean",
+        "length": "-",
+        "default": "False",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "仮パスワード有効期限",
+        "physical_name": "temp_password_expires_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "",
+        "remarks": "Null可"
+      },
+      {
+        "logical_name": "有効",
+        "physical_name": "is_active",
+        "type": "Boolean",
+        "length": "-",
+        "default": "True",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "管理サイトアクセス権限",
+        "physical_name": "is_staff",
+        "type": "Boolean",
+        "length": "-",
+        "default": "False",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "グループ",
+        "physical_name": "groups",
+        "type": "ManyToManyField",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "このユーザーが所属するグループ。ユーザーはそれぞれのグループに付与されたすべての権限を持ちます。"
+      },
+      {
+        "logical_name": "ユーザーパーミッション",
+        "physical_name": "user_permissions",
+        "type": "ManyToManyField",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "このユーザーの持つ権限です。"
+      }
+    ]
+  },
+  {
+    "app": "tasks",
+    "model": "TaskStatusMaster",
+    "verbose_name": "タスク状態マスタ",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "状態コード",
+        "physical_name": "code",
+        "type": "Varchar",
+        "length": 20,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "状態名",
+        "physical_name": "name",
+        "type": "Varchar",
+        "length": 50,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "表示順",
+        "physical_name": "order",
+        "type": "Integer",
+        "length": "-",
+        "default": "0",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "tasks",
+    "model": "TaskTypeMaster",
+    "verbose_name": "タスク種別マスタ",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "種別コード",
+        "physical_name": "code",
+        "type": "Varchar",
+        "length": 20,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "種別名",
+        "physical_name": "name",
+        "type": "Varchar",
+        "length": 50,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "tasks",
+    "model": "Tag",
+    "verbose_name": "タグ",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "タグ名",
+        "physical_name": "name",
+        "type": "Varchar",
+        "length": 50,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      }
+    ]
+  },
+  {
+    "app": "tasks",
+    "model": "Task",
+    "verbose_name": "タスク",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "タスク名",
+        "physical_name": "title",
+        "type": "Varchar",
+        "length": 200,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "期限",
+        "physical_name": "due_date",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "タスク状態",
+        "physical_name": "status_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "タスク種別",
+        "physical_name": "task_type_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "依頼者",
+        "physical_name": "requested_by_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "タスク備考欄",
+        "physical_name": "notes",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "作成日時",
+        "physical_name": "created_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "更新日時",
+        "physical_name": "updated_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "タグ",
+        "physical_name": "tags",
+        "type": "ManyToManyField",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "取り掛かり中の人",
+        "physical_name": "assigned_users",
+        "type": "ManyToManyField",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "完了とした人",
+        "physical_name": "completed_users",
+        "type": "ManyToManyField",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "manuals",
+    "model": "ManualStatusMaster",
+    "verbose_name": "マニュアル状態マスタ",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "状態コード",
+        "physical_name": "code",
+        "type": "Varchar",
+        "length": 20,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "状態名",
+        "physical_name": "name",
+        "type": "Varchar",
+        "length": 50,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "manuals",
+    "model": "ManualVisibilityMaster",
+    "verbose_name": "マニュアル公開範囲マスタ",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "範囲コード",
+        "physical_name": "code",
+        "type": "Varchar",
+        "length": 30,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "範囲名",
+        "physical_name": "name",
+        "type": "Varchar",
+        "length": 100,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "manuals",
+    "model": "Manual",
+    "verbose_name": "マニュアル",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "マニュアル名",
+        "physical_name": "title",
+        "type": "Varchar",
+        "length": 100,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "説明・備考",
+        "physical_name": "description",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "ファイル",
+        "physical_name": "file",
+        "type": "File",
+        "length": 100,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "",
+        "remarks": "Null可"
+      },
+      {
+        "logical_name": "状態",
+        "physical_name": "status_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "公開範囲",
+        "physical_name": "visibility_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "論理削除",
+        "physical_name": "is_deleted",
+        "type": "Boolean",
+        "length": "-",
+        "default": "False",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "作成者",
+        "physical_name": "created_by_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "承認者",
+        "physical_name": "approved_by_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "関連部署",
+        "physical_name": "department_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "作成日時",
+        "physical_name": "created_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "承認日時",
+        "physical_name": "approved_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "",
+        "remarks": "Null可"
+      },
+      {
+        "logical_name": "ブックマーク",
+        "physical_name": "bookmarks",
+        "type": "ManyToManyField",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "manuals",
+    "model": "ViewingHistory",
+    "verbose_name": "閲覧履歴",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "閲覧ユーザー",
+        "physical_name": "user_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "閲覧マニュアル",
+        "physical_name": "manual_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "最終閲覧日時",
+        "physical_name": "viewed_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "manuals",
+    "model": "ManualFile",
+    "verbose_name": "manual file",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "manual",
+        "physical_name": "manual_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "file",
+        "physical_name": "file",
+        "type": "File",
+        "length": 100,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "original name",
+        "physical_name": "original_name",
+        "type": "Varchar",
+        "length": 255,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "uploaded at",
+        "physical_name": "uploaded_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "consultations",
+    "model": "ConsultationStatusMaster",
+    "verbose_name": "相談状態マスタ",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "状態コード",
+        "physical_name": "code",
+        "type": "Varchar",
+        "length": 20,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "状態名",
+        "physical_name": "name",
+        "type": "Varchar",
+        "length": 50,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "consultations",
+    "model": "Consultation",
+    "verbose_name": "consultation",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "相談タイトル",
+        "physical_name": "title",
+        "type": "Varchar",
+        "length": 200,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "質問者",
+        "physical_name": "requester_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "回答者",
+        "physical_name": "respondent_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "状態",
+        "physical_name": "status_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "created at",
+        "physical_name": "created_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "updated at",
+        "physical_name": "updated_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "consultations",
+    "model": "ConsultationMessage",
+    "verbose_name": "consultation message",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "consultation",
+        "physical_name": "consultation_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "sender",
+        "physical_name": "sender_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "メッセージ内容",
+        "physical_name": "content",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "created at",
+        "physical_name": "created_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "consultations",
+    "model": "Question",
+    "verbose_name": "ナレッジ(解決済質問)",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "元チャット",
+        "physical_name": "source_consultation_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "質問タイトル(要約)",
+        "physical_name": "title",
+        "type": "Varchar",
+        "length": 200,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "課題・質問内容",
+        "physical_name": "problem_summary",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "解決策・操作手順",
+        "physical_name": "solution_summary",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "作成者",
+        "physical_name": "created_by_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "created at",
+        "physical_name": "created_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "関連タグ",
+        "physical_name": "tags",
+        "type": "ManyToManyField",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "schedule",
+    "model": "ScheduleEventTypeMaster",
+    "verbose_name": "スケジュール種別マスタ",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "種別コード",
+        "physical_name": "code",
+        "type": "Varchar",
+        "length": 20,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "種別名",
+        "physical_name": "name",
+        "type": "Varchar",
+        "length": 50,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "schedule",
+    "model": "ScheduleEvent",
+    "verbose_name": "スケジュール",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "ユーザー",
+        "physical_name": "user_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "予定タイトル",
+        "physical_name": "title",
+        "type": "Varchar",
+        "length": 100,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "詳細",
+        "physical_name": "description",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "開始日時",
+        "physical_name": "start_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "終了日時",
+        "physical_name": "end_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "種類",
+        "physical_name": "event_type_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "カテゴリ",
+        "physical_name": "category",
+        "type": "Varchar",
+        "length": 20,
+        "default": "work",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "非公開",
+        "physical_name": "is_private",
+        "type": "Boolean",
+        "length": "-",
+        "default": "False",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "interviews",
+    "model": "InterviewStatusMaster",
+    "verbose_name": "面談状態マスタ",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "状態コード",
+        "physical_name": "code",
+        "type": "Varchar",
+        "length": 20,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "状態名",
+        "physical_name": "name",
+        "type": "Varchar",
+        "length": 50,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "interviews",
+    "model": "Interview",
+    "verbose_name": "面談",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "担当上司",
+        "physical_name": "manager_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "対象部下",
+        "physical_name": "employee_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "面談日時",
+        "physical_name": "scheduled_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "終了日時",
+        "physical_name": "end_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "",
+        "remarks": "Null可"
+      },
+      {
+        "logical_name": "面談メモ",
+        "physical_name": "notes",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "状態",
+        "physical_name": "status_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "面談テーマ",
+        "physical_name": "theme",
+        "type": "Varchar",
+        "length": 100,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "場所",
+        "physical_name": "location",
+        "type": "Varchar",
+        "length": 100,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "AI生成スクリプト",
+        "physical_name": "script_generated",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "",
+        "remarks": "Null可"
+      }
+    ]
+  },
+  {
+    "app": "interviews",
+    "model": "InterviewFeedback",
+    "verbose_name": "面談フィードバック",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "対象面談",
+        "physical_name": "interview_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "総合評価",
+        "physical_name": "evaluation",
+        "type": "Integer",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "反応タグ",
+        "physical_name": "tags",
+        "type": "JSONField",
+        "length": "-",
+        "default": "Callable",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "一言メモ",
+        "physical_name": "memo",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "AI分析ログ",
+        "physical_name": "ai_analysis_log",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "",
+        "remarks": "Null可"
+      },
+      {
+        "logical_name": "created at",
+        "physical_name": "created_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "interviews",
+    "model": "MemberAnalysis",
+    "verbose_name": "部下分析データ",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "対象部下",
+        "physical_name": "target_user_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "AI分析テキスト（取説）",
+        "physical_name": "analysis_text",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "最終更新日時",
+        "physical_name": "last_updated",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "notifications",
+    "model": "NotificationTypeMaster",
+    "verbose_name": "通知タイプマスタ",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "タイプコード",
+        "physical_name": "code",
+        "type": "Varchar",
+        "length": 30,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "タイプ名",
+        "physical_name": "name",
+        "type": "Varchar",
+        "length": 100,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "notifications",
+    "model": "Notification",
+    "verbose_name": "通知",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "通知先",
+        "physical_name": "recipient_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "タイトル",
+        "physical_name": "title",
+        "type": "Varchar",
+        "length": 100,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "本文",
+        "physical_name": "message",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "通知タイプ",
+        "physical_name": "notification_type_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "関連ID",
+        "physical_name": "related_object_id",
+        "type": "Integer",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "",
+        "remarks": "Null可"
+      },
+      {
+        "logical_name": "リンクURL",
+        "physical_name": "link_url",
+        "type": "Varchar",
+        "length": 200,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "",
+        "remarks": "Null可"
+      },
+      {
+        "logical_name": "既読",
+        "physical_name": "is_read",
+        "type": "Boolean",
+        "length": "-",
+        "default": "False",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "通知日時",
+        "physical_name": "created_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "chat",
+    "model": "ChatRoom",
+    "verbose_name": "chat room",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "ルーム名",
+        "physical_name": "name",
+        "type": "Varchar",
+        "length": 100,
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "最終更新日時",
+        "physical_name": "updated_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "参加者",
+        "physical_name": "participants",
+        "type": "ManyToManyField",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  },
+  {
+    "app": "chat",
+    "model": "ChatMessage",
+    "verbose_name": "chat message",
+    "fields": [
+      {
+        "logical_name": "ID",
+        "physical_name": "id",
+        "type": "BigAuto",
+        "length": "-",
+        "default": "-",
+        "pk": "○",
+        "fk": "",
+        "nn": "○",
+        "remarks": "Unique"
+      },
+      {
+        "logical_name": "room",
+        "physical_name": "room_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "sender",
+        "physical_name": "sender_id",
+        "type": "BigInt",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "○",
+        "nn": "○",
+        "remarks": "FK"
+      },
+      {
+        "logical_name": "メッセージ内容",
+        "physical_name": "content",
+        "type": "Text",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      },
+      {
+        "logical_name": "created at",
+        "physical_name": "created_at",
+        "type": "DateTime",
+        "length": "-",
+        "default": "-",
+        "pk": "",
+        "fk": "",
+        "nn": "○",
+        "remarks": ""
+      }
+    ]
+  }
+]

@@ -1,0 +1,115 @@
+@startuml BBショップクラス図
+    class "顧客"{
+        - 顧客ID: int
+        - 氏名カタカナ: string
+        - 住所: string
+        - 電話番号: string
+        - メールアドレス: string
+
+        + 登録(): void
+        + 更新(): void
+        + 削除(): void
+    }
+
+    class "注文内容"{
+        - 注文番号: int
+        - 顧客番号: Fk
+        - 注文日: date
+        - 合計金額: float
+        - 仕入れ先番号: Fk
+
+        + 登録(): void
+        + 削除(): void
+    }
+
+    class "注文履歴"{
+        - 注文履歴番号: int
+        - 顧客ID: Fk
+        - 注文ID: Fk
+        - 注文日: date
+        - 合計金額: float
+
+        + 表示(): void
+    }
+
+    class "商品"{
+        - 商品番号: int
+        - 商品名: string
+        - 画像: Fk
+        - カテゴリ: Fk
+        - 詳細: string
+        - 価格: float
+
+        + 登録(): void
+        + 更新(): void
+        + 削除(): void
+    }
+
+    class "画像"{
+        - 画像番号: int
+        - 商品番号: Fk
+        - 画像URL: string
+
+        + 登録(): void
+        + 削除(): void
+    }
+
+    class "カテゴリ"{
+        - カテゴリ番号: int
+        - カテゴリ名: string
+
+        + 登録(): void
+        + 削除(): void
+    }
+
+    class "仕入先"{
+        - 仕入先番号: int
+        - 仕入先名: string
+        - 担当者名: string
+        - 事業者住所: string
+        - 担当者電話番号: string
+
+        + 登録(): void
+        + 削除(): void
+    }
+
+    class "管理者"{
+        - 管理者番号: int
+        - 氏名: string
+        - パスワード: string
+
+        + 登録(): void
+        + 削除(): void
+    }
+
+    class "カタログ"{
+        - カタログ番号: int
+        - カタログpdf番号: Fk
+
+        + 登録(): void
+        + 更新(): void
+        + 削除(): void
+    }
+
+    class "カタログpdf"{
+        - カタログpdf番号: int
+        - カタログ番号: Fk
+        - pdfURL: string
+
+        + 登録(): void
+        + 削除(): void
+    }
+
+    商品 "1..*" -- "1" 画像
+    商品 "1..*" -- "1..*" カテゴリ
+    カタログ "1" -- "1..*" カタログpdf
+
+    注文内容 "1" -- "1..*" 仕入先
+    顧客 "1" -- "0..*" 注文履歴
+    商品 "1" -- "0..*" 注文内容
+    注文内容 "1" -- "1..*" 注文履歴
+
+    管理者 "1..*" -- "1..*" 顧客
+    管理者 "1..*" -- "0..*" カタログ
+
+@enduml
